@@ -18,3 +18,25 @@ https://files.grouplens.org/datasets/movielens/。
 这里有两个选择，一是我们等第二周的两节课结束之后，根据课程内容自行选择构建架构。
 
 二是github上有一堆COMP0022的作业，我们拿一个回来魔改。
+
+# Getting Started
+
+1. **启动服务** 在项目根目录下运行以下命令来构建并启动所有容器：
+```bash
+docker compose up --build
+
+```
+
+2. **进入 MySQL 数据库** 等待容器启动完成后，运行以下命令进入 MySQL 交互界面：
+```bash
+docker exec -it mysql_server mysql -u root -p
+
+```
+
+
+3. **输入密码** 当提示 `Enter password:` 时，输入：
+`password123`
+4. **退出** 操作完成后，输入以下命令退出 MySQL 终端：
+```sql
+exit
+```
