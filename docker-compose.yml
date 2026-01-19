@@ -11,5 +11,14 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
 
+  web: 
+    image: nginx:latest
+    container_name: nginx_server
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - db
+
 volumes:
   mysql_data:
