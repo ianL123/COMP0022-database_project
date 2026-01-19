@@ -40,3 +40,22 @@ docker exec -it mysql_server mysql -u root -p
 ```sql
 exit
 ```
+
+# Nginx
+### 1. 重新启动容器
+
+在终端运行以下命令。Docker 会检测到配置变化，自动下载 Nginx 镜像并启动新容器
+
+```bash
+docker compose up -d
+
+```
+
+### 2. 验证结果
+
+打开你的浏览器，在地址栏输入：
+
+http://localhost
+
+**预期结果**：
+一个写着 **"Welcome to nginx!"** 的页面。
