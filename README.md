@@ -11,7 +11,7 @@ https://files.grouplens.org/datasets/movielens/。
 # Docker
 
 安装https://www.docker.com/products/docker-desktop/
-然后你的电脑里就有所有docker相关的环境了。
+然后你的电脑里就有所有docker相关的环境了。1
 
 # 架构
 
