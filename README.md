@@ -29,13 +29,18 @@ docker compose up --build
 
 2. **进入 MySQL 数据库** 等待容器启动完成后，运行以下命令进入 MySQL 交互界面：
 ```bash
-docker exec -it mysql_server mysql -u root -p
+docker exec -it mysql_server mysql -u root -ppassword123 my_project_db
 
 ```
 
+3. **检查 MySQL 数据库内容**
+```bash
+SELECT COUNT(*) from links; # should be 9742
+SELECT COUNT(*) from movies; # should be 9742
+SELECT COUNT(*) from ratings; # should be 100836
+SELECT COUNT(*) from tags; # should be 3683
+```
 
-3. **输入密码** 当提示 `Enter password:` 时，输入：
-`password123`
 4. **退出** 操作完成后，输入以下命令退出 MySQL 终端：
 ```sql
 exit
