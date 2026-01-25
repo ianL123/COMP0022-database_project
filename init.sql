@@ -1,3 +1,5 @@
+USE my_project_db;
+
 -- Create Tables with NOT NULL to ensure we don't allow empty entries
 CREATE TABLE IF NOT EXISTS movies (
     movieId INT PRIMARY KEY,
