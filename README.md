@@ -65,7 +65,7 @@ docker compose up --build -d
 
 打开你的浏览器，在地址栏输入：
 
-http://localhost:5000
+http://localhost:5001
 
 **预期结果**：
 一个可以搜索电影均分的页面
