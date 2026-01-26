@@ -19,7 +19,7 @@ https://files.grouplens.org/datasets/movielens/。
 
 二是github上有一堆COMP0022的作业，我们拿一个回来魔改。
 
-# Getting Started
+# MySQL
 
 1. **启动服务** 在项目根目录下运行以下命令来构建并启动所有容器：
 ```bash
@@ -39,11 +39,16 @@ SELECT COUNT(*) from links; # should be 9742
 SELECT COUNT(*) from movies; # should be 9742
 SELECT COUNT(*) from ratings; # should be 100836
 SELECT COUNT(*) from tags; # should be 3683
+SELECT COUNT(*) from average_ratings; # shoule be 9724
 ```
 
 4. **退出** 操作完成后，输入以下命令退出 MySQL 终端：
 ```sql
 exit
+```
+输入以下命令关闭Docker镜像：
+```bash
+docker compose down -v
 ```
 
 # Nginx

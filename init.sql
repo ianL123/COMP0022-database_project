@@ -27,11 +27,18 @@ CREATE TABLE IF NOT EXISTS tags (
     timestamp BIGINT NOT NULL
 ) CHARACTER SET utf8mb4;
 
+CREATE TABLE IF NOT EXISTS average_ratings (
+    movieId INT NOT NULL,
+    avg_rating DECIMAL(3,2) NOT NULL,
+    count INT NOT NULL
+);
+
 -- TRUNCATE to ensure a clean start
 TRUNCATE TABLE movies;
 TRUNCATE TABLE links;
 TRUNCATE TABLE ratings;
 TRUNCATE TABLE tags;
+TRUNCATE TABLE average_ratings;
 
 -- The 'IGNORE' keyword here tells MySQL: 
 -- "If a row causes an error (like a missing tmdbId), skip it and move to the next row."
@@ -52,5 +59,10 @@ LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
 LOAD DATA INFILE '/var/lib/mysql-files/tags.csv' 
 IGNORE INTO TABLE tags 
+FIELDS TERMINATED BY ',' 
+LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+
+LOAD DATA INFILE '/var/lib/mysql-files/average_ratings.csv' 
+IGNORE INTO TABLE average_ratings
 FIELDS TERMINATED BY ',' 
 LINES TERMINATED BY '\n' IGNORE 1 ROWS;

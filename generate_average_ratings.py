@@ -1,7 +1,7 @@
 import csv
 
 input_file = 'ml-latest-small/ratings.csv'
-output_file = 'ml-latest-small/average_rating.csv'
+output_file = 'ml-latest-small/average_ratings.csv'
 
 # Dictionary to store {movieId: [sum_of_ratings, count]}
 movie_stats = {}
@@ -22,7 +22,7 @@ with open(input_file, mode='r', newline='') as f:
 # Calculate averages and write to the output file
 with open(output_file, mode='w', newline='') as f:
     writer = csv.writer(f)
-    writer.writerow(['movieId', 'avg_rating'])
+    writer.writerow(['movieId', 'avg_rating', 'count'])
     
     # Sort movieIds numerically for the output
     sorted_ids = sorted(movie_stats.keys(), key=int)
@@ -30,6 +30,6 @@ with open(output_file, mode='w', newline='') as f:
     for m_id in sorted_ids:
         total_rating, count = movie_stats[m_id]
         avg_rating = total_rating / count
-        writer.writerow([m_id, avg_rating])
+        writer.writerow([m_id, avg_rating, count])
 
 print(f"Successfully created {output_file}")
