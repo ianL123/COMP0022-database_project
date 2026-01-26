@@ -1,18 +1,71 @@
 <!DOCTYPE html>
 <html>
-<head><title>Movie Ratings</title></head>
-<body style="padding: 50px; font-family: sans-serif;">
-    <form method="POST">
-        <input type="text" name="query" placeholder="Search movie title..." value="{{ query }}">
-        <button type="submit">Search</button>
-    </form>
-    {% if results %}
-    <table border="1" style="margin-top:20px; width:100%; border-collapse:collapse;">
-        <tr><th>Title</th><th>Rating</th><th>Votes</th></tr>
-        {% for row in results %}
-        <tr><td>{{ row.title }}</td><td>{{ row.avg_rating }}</td><td>{{ row.count }}</td></tr>
-        {% endfor %}
-    </table>
-    {% endif %}
+<head>
+    <title>Content Strategist Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="p-4 bg-light">
+    <div class="container-fluid">
+        <h2 class="mb-4">Film Information Catalogue</h2>
+        
+        <div class="card p-3 mb-4 shadow-sm">
+            <form method="POST" class="row g-3">
+                <div class="col-md-3">
+                    <label>Title</label>
+                    <input type="text" name="title" class="form-control" value="{{ inputs.title }}">
+                </div>
+                <div class="col-md-2">
+                    <label>Genre</label>
+                    <input type="text" name="genre" class="form-control" placeholder="e.g. Comedy" value="{{ inputs.genre }}">
+                </div>
+                <div class="col-md-2">
+                    <label>Tag</label>
+                    <input type="text" name="tag" class="form-control" placeholder="e.g. funny" value="{{ inputs.tag }}">
+                </div>
+                <div class="col-md-2">
+                    <label>Release Year</label>
+                    <input type="text" name="year" class="form-control" placeholder="1995" value="{{ inputs.year }}">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Filter Catalogue</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="table-responsive bg-white shadow-sm rounded">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Title</th>
+                        <th>Year</th>
+                        <th>Genre(s)</th>
+                        <th>Tags</th>
+                        <th>Avg Rating (Votes)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in results %}
+                    <tr>
+                        <td><strong>{{ row.title }}</strong></td>
+                        <td>{{ row.release_year }}</td>
+                        <td><small class="text-muted">{{ row.genres }}</small></td>
+                        <td>
+                            {% if row.all_tags %}
+                                <span class="badge bg-info text-dark">{{ row.all_tags }}</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="fw-bold text-primary">
+                                {{ "%.2f"|format(row.avg_rating) }} ({{ row.vote_count }})
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </body>
 </html>
