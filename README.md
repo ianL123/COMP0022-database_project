@@ -51,13 +51,13 @@ exit
 docker compose down -v
 ```
 
-# Nginx
+# Getting Started
 ### 1. 重新启动容器
 
 在终端运行以下命令。Docker 会检测到配置变化，自动下载 Nginx 镜像并启动新容器
 
 ```bash
-docker compose up -d
+docker compose up --build -d
 
 ```
 
@@ -65,7 +65,7 @@ docker compose up -d
 
 打开你的浏览器，在地址栏输入：
 
-http://localhost
+http://localhost:5000
 
 **预期结果**：
-一个写着 **"Welcome to nginx!"** 的页面。
+一个可以搜索电影均分的页面
