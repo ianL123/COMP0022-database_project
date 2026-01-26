@@ -23,7 +23,7 @@ https://files.grouplens.org/datasets/movielens/。
 
 1. **启动服务** 在项目根目录下运行以下命令来构建并启动所有容器：
 ```bash
-docker compose up -d
+docker compose up --build -d
 
 ```
 

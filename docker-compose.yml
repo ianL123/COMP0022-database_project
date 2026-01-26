@@ -15,14 +15,26 @@ services:
       # 2. Mount the folder containing your CSVs
       - ./ml-latest-small:/var/lib/mysql-files
 
+  app:
+    build: .
+    container_name: python_app
+    depends_on:
+      - db
+    ports:
+      - "5001:5000"  # This maps your computer's 5000 to the container's 5000
+    environment:
+      - DATABASE_URL=mysql+pymysql://root:password123@db:3306/my_project_db
+    # We don't need to expose 5000 to the host, only Nginx needs to see it
+
   web: 
     image: nginx:latest
     container_name: nginx_server
-    restart: always
     ports:
       - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
-      - db
+      - app
 
 volumes:
   mysql_data:

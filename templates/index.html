@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head><title>Movie Ratings</title></head>
+<body style="padding: 50px; font-family: sans-serif;">
+    <form method="POST">
+        <input type="text" name="query" placeholder="Search movie title..." value="{{ query }}">
+        <button type="submit">Search</button>
+    </form>
+    {% if results %}
+    <table border="1" style="margin-top:20px; width:100%; border-collapse:collapse;">
+        <tr><th>Title</th><th>Rating</th><th>Votes</th></tr>
+        {% for row in results %}
+        <tr><td>{{ row.title }}</td><td>{{ row.avg_rating }}</td><td>{{ row.count }}</td></tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+</body>
+</html>
