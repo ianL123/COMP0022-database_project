@@ -13,25 +13,20 @@ db = SQLAlchemy(app)
 @app.route('/', methods=['GET', 'POST'])
 def index():
     results = []
-    alerts = []  # 用来存“需要找数据”的提示
+    alerts = []
 
-    # --- 1. 获取前端输入 ---
-    # A. 已有数据字段
     f_title = request.form.get('title', '')
     f_genre = request.form.get('genre', '')
     f_tag = request.form.get('tag', '')
     f_year_start = request.form.get('year_start', '')
     f_year_end = request.form.get('year_end', '')
 
-    # B. 缺失数据字段 (Task要求但这几个表里没有)
     f_director = request.form.get('director', '')
     f_actor = request.form.get('actor', '')
     f_awards = request.form.get('awards', '')
     f_runtime = request.form.get('runtime', '')
     f_language = request.form.get('language', '')
 
-    # --- 2. 处理缺失数据的逻辑 (Alert) ---
-    # 只要用户在这些框里填了字，就告诉他数据缺失
     if f_director:
         alerts.append(f"需要找导演的数据 (目前数据库缺失)")
     
@@ -47,10 +42,6 @@ def index():
     if f_language:
         alerts.append("需要找语言的数据 (目前数据库缺失)")
 
-    # --- 3. 处理已有数据的查询 (SQL) ---
-    # 只有当用户没有搜索缺失字段，或者为了混合显示，我们执行这个查询
-    # 注意：年份逻辑是截取 title 字段的最后 4 位数字
-    
     sql = """
         SELECT 
             m.movieId,
@@ -90,7 +81,6 @@ def index():
         print(f"Database Error: {e}")
         alerts.append("数据库连接或查询错误")
 
-    # --- 4. 返回页面 ---
     return render_template('index.html', 
                            results=results, 
                            alerts=alerts,
