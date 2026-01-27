@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
+import analytics
 
 app = Flask(__name__)
 
@@ -85,6 +86,21 @@ def index():
                            results=results, 
                            alerts=alerts,
                            inputs=request.form)
+
+# === Task 2: Analytics Reports Route ===
+@app.route('/reports')
+def reports():
+    """
+    Displays the analysis reports for Popularity and Polarization.
+    Fetches data using the analytics module.
+    """
+    # Call functions from analytics.py
+    popularity_data = analytics.get_genre_popularity(db.session)
+    polarization_data = analytics.get_genre_polarization(db.session)
+    
+    return render_template('reports.html', 
+                           popularity=popularity_data, 
+                           polarization=polarization_data)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
