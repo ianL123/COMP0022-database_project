@@ -40,7 +40,13 @@ SELECT COUNT(*) from movies; # should be 9742
 SELECT COUNT(*) from ratings; # should be 100836
 SELECT COUNT(*) from tags; # should be 3683
 SELECT COUNT(*) from average_ratings; # shoule be 9724
+
+SELECT * FROM init_run_log ORDER BY id;
 ```
+
+最后一行的输出应该是三条你的启动时间，你可以检查时间是否正确。
+如果出现任何错误可能是你上一次docker退出方式不对，请完整执行第4步，然后重新开始。
+
 
 4. **退出** 操作完成后，输入以下命令退出 MySQL 终端：
 ```sql
