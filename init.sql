@@ -1,5 +1,15 @@
 USE my_project_db;
 
+ -- Log the initialization run
+DROP TABLE IF EXISTS init_run_log;
+CREATE TABLE init_run_log (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  stage VARCHAR(64) NOT NULL,
+  ran_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO init_run_log(stage) VALUES ('started');
+
 -- Create Tables with NOT NULL to ensure we don't allow empty entries
 CREATE TABLE IF NOT EXISTS movies (
     movieId INT PRIMARY KEY,
@@ -32,6 +42,9 @@ CREATE TABLE IF NOT EXISTS average_ratings (
     avg_rating DECIMAL(3,2) NOT NULL,
     count INT NOT NULL
 );
+
+-- log
+INSERT INTO init_run_log(stage) VALUES ('tables_created');
 
 -- TRUNCATE to ensure a clean start
 TRUNCATE TABLE movies;
@@ -66,3 +79,6 @@ LOAD DATA INFILE '/var/lib/mysql-files/average_ratings.csv'
 IGNORE INTO TABLE average_ratings
 FIELDS TERMINATED BY ',' 
 LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+
+-- log
+INSERT INTO init_run_log(stage) VALUES ('finished');
