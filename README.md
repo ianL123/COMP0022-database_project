@@ -75,3 +75,12 @@ http://localhost:5001
 
 **预期结果**：
 一个可以搜索电影均分的页面
+
+# 网页风格
+
+在页面中加入了两个指定页面风格的内容。
+```html
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+```
+其中后者在static\css\style.css中，可以对前面的样式进行个性化修改。
