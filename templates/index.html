@@ -127,7 +127,7 @@
                         <td><span class="badge bg-secondary">{{ row.release_year }}</span></td>
                         <td>
                             {% for g in row.genres.split('|') %}
-                              <span class="genre">{{ g }}</span>
+                                <span class="genre genre-{{ g|lower|replace(' ', '-') }}">{{ g }}</span>
                             {% endfor %}
                         </td>
                         <td>

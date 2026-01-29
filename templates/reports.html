@@ -52,7 +52,7 @@
                                     <td>#{{ loop.index }}</td>
                                     <td>
                                         {% for g in row.genres.split('|') %}
-                                          <span class="genre">{{ g }}</span>
+                                          <span class="genre genre-{{ g|lower|replace(' ', '-') }}">{{ g }}</span>
                                         {% endfor %}
                                     </td>
                                     <td class="fw-bold text-success">{{ "%.2f"|format(row.avg_score) }}</td>
@@ -89,7 +89,7 @@
                                     <td>#{{ loop.index }}</td>
                                     <td>
                                         {% for g in row.genres.split('|') %}
-                                          <span class="genre">{{ g }}</span>
+                                          <span class="genre genre-{{ g|lower|replace(' ', '-') }}">{{ g }}</span>
                                         {% endfor %}
                                     </td>
                                     <td class="fw-bold text-danger">
