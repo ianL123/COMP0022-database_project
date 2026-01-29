@@ -31,3 +31,19 @@ th, td {
 tr:hover {
   background: #f0f4ff;
 }
+
+.genre {
+    display: inline-block;
+    padding: 4px 10px;
+    margin: 2px 4px 2px 0;
+
+    background-color: #12a844;
+    color: #00363a;
+
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1;
+
+    border-radius: 5px;
+    white-space: nowrap;
+}

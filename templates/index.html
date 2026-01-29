@@ -125,7 +125,11 @@
                     <tr>
                         <td><strong>{{ row.title }}</strong></td>
                         <td><span class="badge bg-secondary">{{ row.release_year }}</span></td>
-                        <td><small class="text-muted">{{ row.genres }}</small></td>
+                        <td>
+                            {% for g in row.genres.split('|') %}
+                              <span class="genre">{{ g }}</span>
+                            {% endfor %}
+                        </td>
                         <td>
                             {% if row.all_tags %}
                                 <span class="badge bg-info text-dark" style="white-space: normal; text-align: left;">{{ row.all_tags }}</span>

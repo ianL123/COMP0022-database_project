@@ -50,7 +50,11 @@
                                 {% for row in popularity %}
                                 <tr>
                                     <td>#{{ loop.index }}</td>
-                                    <td>{{ row.genres }}</td>
+                                    <td>
+                                        {% for g in row.genres.split('|') %}
+                                          <span class="genre">{{ g }}</span>
+                                        {% endfor %}
+                                    </td>
                                     <td class="fw-bold text-success">{{ "%.2f"|format(row.avg_score) }}</td>
                                     <td class="text-muted small">{{ row.total_votes }}</td>
                                 </tr>
@@ -83,7 +87,11 @@
                                 {% for row in polarization %}
                                 <tr>
                                     <td>#{{ loop.index }}</td>
-                                    <td>{{ row.genres }}</td>
+                                    <td>
+                                        {% for g in row.genres.split('|') %}
+                                          <span class="genre">{{ g }}</span>
+                                        {% endfor %}
+                                    </td>
                                     <td class="fw-bold text-danger">
                                         {{ "%.3f"|format(row.std_dev) if row.std_dev else '0.00' }}
                                     </td>
