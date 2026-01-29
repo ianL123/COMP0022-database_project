@@ -86,3 +86,9 @@ http://localhost:5001
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
 ```
 其中后者在static\css\style.css中，可以对前面的样式进行个性化修改。注意由于书写顺序我们自定义的样式会覆盖前面的样式。
+
+## 标签拆分
+
+目前已经写了`.genre`类的样式，可以对电影类型标签进行个性化修改。似乎tag也应该做对应调整。
+
+目前的配色仅仅是功能展示，未来可以改地更好看一些。
