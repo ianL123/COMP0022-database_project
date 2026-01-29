@@ -80,7 +80,9 @@ http://localhost:5001
 
 在页面中加入了两个指定页面风格的内容。
 ```html
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <!-- others -->
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
 ```
-其中后者在static\css\style.css中，可以对前面的样式进行个性化修改。
+其中后者在static\css\style.css中，可以对前面的样式进行个性化修改。注意由于书写顺序我们自定义的样式会覆盖前面的样式。
