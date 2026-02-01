@@ -1,6 +1,6 @@
 USE my_project_db;
 
- -- Log the initialization run
+-- 1. Setup Logging
 DROP TABLE IF EXISTS init_run_log;
 CREATE TABLE init_run_log (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -10,17 +10,24 @@ CREATE TABLE init_run_log (
 
 INSERT INTO init_run_log(stage) VALUES ('started');
 
--- Create Tables with NOT NULL to ensure we don't allow empty entries
+-- 2. Schema Definition
+-- We remove PRIMARY KEY constraints from ratings/tags to allow multiple entries per movie
 CREATE TABLE IF NOT EXISTS movies (
     movieId INT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     genres VARCHAR(255) NOT NULL
 ) CHARACTER SET utf8mb4;
 
+CREATE TABLE IF NOT EXISTS movie_genres (
+    movieId INT NOT NULL,
+    genre VARCHAR(100) NOT NULL,
+    PRIMARY KEY (movieId, genre)
+);
+
 CREATE TABLE IF NOT EXISTS links (
     movieId INT PRIMARY KEY,
     imdbId VARCHAR(20) NOT NULL,
-    tmdbId INT NOT NULL  -- If this is empty in CSV, the row will be skipped
+    tmdbId VARCHAR(20) -- Changed to VARCHAR to prevent failure on empty CSV cells
 );
 
 CREATE TABLE IF NOT EXISTS ratings (
@@ -43,18 +50,24 @@ CREATE TABLE IF NOT EXISTS average_ratings (
     count INT NOT NULL
 );
 
--- log
+CREATE TABLE IF NOT EXISTS genre_stats_summary (
+    genre VARCHAR(100) PRIMARY KEY,
+    avg_score DECIMAL(5,4),
+    std_dev DECIMAL(5,4),
+    total_votes INT,
+    sentiment_gap DECIMAL(5,4), -- NEW
+    marmite_score DECIMAL(5,2)  -- NEW
+);
+
 INSERT INTO init_run_log(stage) VALUES ('tables_created');
 
--- TRUNCATE to ensure a clean start
-TRUNCATE TABLE movies;
-TRUNCATE TABLE links;
-TRUNCATE TABLE ratings;
-TRUNCATE TABLE tags;
-TRUNCATE TABLE average_ratings;
+-- 3. Data Loading
+-- Note: Using \r\n for line endings is safer for files created on Windows/Excel
+LOAD DATA INFILE '/var/lib/mysql-files/average_ratings.csv' 
+IGNORE INTO TABLE average_ratings
+FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
+LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
--- The 'IGNORE' keyword here tells MySQL: 
--- "If a row causes an error (like a missing tmdbId), skip it and move to the next row."
 LOAD DATA INFILE '/var/lib/mysql-files/movies.csv' 
 IGNORE INTO TABLE movies 
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
@@ -72,13 +85,23 @@ LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
 LOAD DATA INFILE '/var/lib/mysql-files/tags.csv' 
 IGNORE INTO TABLE tags 
-FIELDS TERMINATED BY ',' 
+FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
 LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
-LOAD DATA INFILE '/var/lib/mysql-files/average_ratings.csv' 
-IGNORE INTO TABLE average_ratings
-FIELDS TERMINATED BY ',' 
+LOAD DATA INFILE '/var/lib/mysql-files/movie_genres.csv' 
+IGNORE INTO TABLE movie_genres 
+FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
 LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
--- log
+LOAD DATA INFILE '/var/lib/mysql-files/genre_stats_summary.csv' 
+IGNORE INTO TABLE genre_stats_summary
+FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
+LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+
+-- Speed up Title searches
+CREATE INDEX idx_movie_title ON movies(title);
+
+-- Speed up the "Top Rated" sorting on the home page
+CREATE INDEX idx_avg_rating ON average_ratings(avg_rating);
+
 INSERT INTO init_run_log(stage) VALUES ('finished');

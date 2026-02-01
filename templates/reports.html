@@ -32,18 +32,21 @@
         <div class="row">
             <div class="col-md-6 mb-4">
                 <div class="card shadow-sm h-100">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0"><i class="bi bi-hand-thumbs-up"></i> Top 20 Highest Rated Genres</h5>
-                        <small>Based on average user ratings (Popularity)</small>
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-0"><i class="bi bi-hand-thumbs-up"></i> High-Performance Genres</h5>
+                            <small>Ranked by Sentiment Gap (Performance vs. Site Average)</small>
+                        </div>
                     </div>
                     <div class="card-body p-0">
                         <table class="table table-striped table-hover mb-0">
                             <thead class="table-light">
                                 <tr>
                                     <th>Rank</th>
-                                    <th>Genre Combination</th>
+                                    <th>Genre</th>
                                     <th>Avg Rating</th>
-                                    <th>Votes</th>
+                                    <th>Sentiment Gap</th>
+                                    <th>Total Votes</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -51,15 +54,18 @@
                                 <tr>
                                     <td>#{{ loop.index }}</td>
                                     <td>
-                                        {% for g in row.genres.split('|') %}
-                                          <span class="genre genre-{{ g|lower|replace(' ', '-') }}">{{ g }}</span>
-                                        {% endfor %}
+                                        <span class="badge bg-secondary">{{ row.genre }}</span>
                                     </td>
-                                    <td class="fw-bold text-success">{{ "%.2f"|format(row.avg_score) }}</td>
-                                    <td class="text-muted small">{{ row.total_votes }}</td>
+                                    <td class="fw-bold">{{ "%.2f"|format(row.avg_score) }}</td>
+                                    <td>
+                                        <span class="badge {{ 'bg-success' if row.sentiment_gap > 0 else 'bg-danger' }}">
+                                            {{ "+" if row.sentiment_gap > 0 }}{{ "%.2f"|format(row.sentiment_gap) }}
+                                        </span>
+                                    </td>
+                                    <td class="text-muted small">{{ "{:,}".format(row.total_votes) }}</td>
                                 </tr>
                                 {% else %}
-                                <tr><td colspan="4" class="p-3">No data available.</td></tr>
+                                <tr><td colspan="5" class="p-3 text-center">No data available. Run preprocessor and restart DB.</td></tr>
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -70,17 +76,18 @@
             <div class="col-md-6 mb-4">
                 <div class="card shadow-sm h-100">
                     <div class="card-header bg-danger text-white">
-                        <h5 class="mb-0"><i class="bi bi-lightning-charge"></i> Top 20 Most Polarizing Genres</h5>
-                        <small>Based on Standard Deviation (Controversy)</small>
+                        <h5 class="mb-0"><i class="bi bi-lightning-charge"></i> "Love-it-or-Hate-it" Genres</h5>
+                        <small>Ranked by Marmite Score (% of 1-Star or 5-Star Ratings)</small>
                     </div>
                     <div class="card-body p-0">
                         <table class="table table-striped table-hover mb-0">
                             <thead class="table-light">
                                 <tr>
                                     <th>Rank</th>
-                                    <th>Genre Combination</th>
+                                    <th>Genre</th>
+                                    <th>Marmite Score</th>
                                     <th>Std Dev</th>
-                                    <th>Avg Rating</th>
+                                    <th>Votes</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -88,17 +95,16 @@
                                 <tr>
                                     <td>#{{ loop.index }}</td>
                                     <td>
-                                        {% for g in row.genres.split('|') %}
-                                          <span class="genre genre-{{ g|lower|replace(' ', '-') }}">{{ g }}</span>
-                                        {% endfor %}
+                                        <span class="badge bg-dark">{{ row.genre }}</span>
                                     </td>
                                     <td class="fw-bold text-danger">
-                                        {{ "%.3f"|format(row.std_dev) if row.std_dev else '0.00' }}
+                                        {{ "%.1f"|format(row.marmite_score) }}%
                                     </td>
-                                    <td class="text-muted">{{ "%.1f"|format(row.avg_score) }}</td>
+                                    <td class="text-muted">{{ "%.3f"|format(row.std_dev) }}</td>
+                                    <td class="text-muted small">{{ "{:,}".format(row.total_votes) }}</td>
                                 </tr>
                                 {% else %}
-                                <tr><td colspan="4" class="p-3">No data available.</td></tr>
+                                <tr><td colspan="5" class="p-3 text-center">No data available. Run preprocessor and restart DB.</td></tr>
                                 {% endfor %}
                             </tbody>
                         </table>

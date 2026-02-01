@@ -13,7 +13,7 @@ services:
       # 1. Mount the script to the auto-run directory
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
       # 2. Mount the folder containing your CSVs
-      - ./ml-latest-small:/var/lib/mysql-files
+      - ./ml-latest:/var/lib/mysql-files
 
   app:
     build: .
