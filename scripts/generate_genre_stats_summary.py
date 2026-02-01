@@ -2,9 +2,9 @@ import csv
 import math
 from collections import defaultdict
 
-input_file_movies = './ml-latest/movies.csv'
-input_file_ratings = './ml-latest/ratings.csv'
-output_file = './ml-latest/genre_stats_summary.csv'
+input_file_movies = '../ml-latest/movies.csv'
+input_file_ratings = '../ml-latest/ratings.csv'
+output_file = '../ml-latest/genre_stats_summary.csv'
 
 def run_preprocessor():
     # 1. Map MovieID to Genres

@@ -1,7 +1,7 @@
 import csv
 
-input_file = './ml-latest/movies.csv'
-output_file = './ml-latest/movie_genres.csv'
+input_file = '../ml-latest/movies.csv'
+output_file = '../ml-latest/movie_genres.csv'
 
 def process_genres():
     print(f"Opening {input_file}...")

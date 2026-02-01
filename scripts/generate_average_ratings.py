@@ -1,7 +1,7 @@
 import csv
 
-input_file = 'ml-latest/ratings.csv'
-output_file = 'ml-latest/average_ratings.csv'
+input_file = '../ml-latest/ratings.csv'
+output_file = '../ml-latest/average_ratings.csv'
 
 # Dictionary to store {movieId: [sum_of_ratings, count]}
 movie_stats = {}
