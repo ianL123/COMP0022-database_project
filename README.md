@@ -58,6 +58,20 @@ docker compose down -v
 ```
 
 # Getting Started
+### 0. 准备数据集
+下载文件夹
+https://files.grouplens.org/datasets/movielens/ml-latest.zip
+
+删除无用数据, 两个genome文件
+```bash
+rm genome*
+```
+
+运行预计算脚本
+```bash
+python scripts/preprocess.py
+```
+
 ### 1. 重新启动容器
 
 在终端运行以下命令。Docker 会检测到配置变化，自动下载 Nginx 镜像并启动新容器
