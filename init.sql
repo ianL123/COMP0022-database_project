@@ -55,8 +55,13 @@ CREATE TABLE IF NOT EXISTS genre_stats_summary (
     avg_score DECIMAL(5,4),
     std_dev DECIMAL(5,4),
     total_votes INT,
-    sentiment_gap DECIMAL(5,4), -- NEW
-    marmite_score DECIMAL(5,2)  -- NEW
+    sentiment_gap DECIMAL(5,4),  -- NEW
+    marmite_score DECIMAL(5,2),  -- NEW
+    count_1s INT,
+    count_2s INT,
+    count_3s INT,
+    count_4s INT,
+    count_5s INT
 );
 
 INSERT INTO init_run_log(stage) VALUES ('tables_created');
