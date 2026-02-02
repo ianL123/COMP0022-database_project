@@ -69,7 +69,8 @@ rm genome*
 
 运行预计算脚本
 ```bash
-python scripts/preprocess.py
+cd scripts
+python preprocess.py
 ```
 
 ### 1. 重新启动容器
