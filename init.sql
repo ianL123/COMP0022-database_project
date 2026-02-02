@@ -105,7 +105,8 @@ LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
 -- Speed up Title searches
 CREATE INDEX idx_movie_title ON movies(title);
-
+-- This allows the JOIN to find ratings for a specific movieId instantly
+CREATE INDEX idx_ratings_movieid ON ratings(movieId);
 -- Speed up the "Top Rated" sorting on the home page
 CREATE INDEX idx_avg_rating ON average_ratings(avg_rating);
 

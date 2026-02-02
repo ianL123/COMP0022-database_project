@@ -53,59 +53,72 @@ def process_average_ratings():
     print(f"   - Success: Created {OUTPUT_AVG_RATINGS}")
 
 def process_advanced_genre_stats():
-    """Script 2 logic: Advanced analytics combining movies and ratings."""
-    print("3. Generating advanced genre analytics (Marmite Score, etc.)...")
+    """
+    Script 2 logic: Advanced analytics for EXACT genre combinations.
+    Keeps 'Action|Sci-Fi' as a single category for the dashboard.
+    """
+    print("3. Generating advanced genre analytics for combinations (Marmite Score, etc.)...")
     
-    # Map MovieID to Genres
-    movie_to_genres = {}
+    # Map MovieID to the RAW genre string
+    movie_to_genre_combo = {}
     with open(INPUT_MOVIES, 'r', encoding='utf-8') as f:
         for row in csv.DictReader(f):
+            # We do NOT split or explode here. We keep the raw string.
             if row['genres'] != '(no genres listed)':
-                movie_to_genres[row['movieId']] = row['genres'].split('|')
+                movie_to_genre_combo[row['movieId']] = row['genres']
 
-    # genre -> [sum, count, sum_sq, count_1s, count_2s, count_3s, count_4s, count_5s]
-    # We use 8 indices now to track the total sum, total count, sum of squares, and each star level.
+    # genre_combo -> [sum, count, sum_sq, count_1s, count_2s, count_3s, count_4s, count_5s]
     stats = defaultdict(lambda: [0.0, 0, 0.0, 0, 0, 0, 0, 0])
     global_sum, global_count = 0.0, 0
 
     with open(INPUT_RATINGS, 'r', encoding='utf-8') as f:
-        for row in csv.DictReader(f):
+        reader = csv.DictReader(f)
+        for row in reader:
             mid, rating = row['movieId'], float(row['rating'])
-            if mid in movie_to_genres:
+            
+            # Get the full combination string (e.g., "Adventure|Children|Fantasy")
+            genre_str = movie_to_genre_combo.get(mid)
+            if genre_str:
                 global_sum += rating
                 global_count += 1
-                for g in movie_to_genres[mid]:
-                    s = stats[g]
-                    s[0], s[1], s[2] = s[0]+rating, s[1]+1, s[2]+(rating**2)
-                    
-                    # Track individual star counts (rounding in case of 0.5 ratings)
-                    r_int = int(round(rating))
-                    if 1 <= r_int <= 5:
-                        s[r_int + 2] += 1 # Indices 3, 4, 5, 6, 7 represent 1*, 2*, 3*, 4*, 5*
+                
+                s = stats[genre_str]
+                # Aggregate metrics for this specific combo
+                s[0] += rating          # sum
+                s[1] += 1               # count
+                s[2] += rating**2       # sum_sq
+                
+                # Star level mapping
+                r_int = int(round(rating))
+                if 1 <= r_int <= 5:
+                    s[r_int + 2] += 1
     
     global_avg = global_sum / global_count if global_count > 0 else 3.53
 
     with open(OUTPUT_GENRE_STATS, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
-        # Updated header with specific star count columns
         writer.writerow([
-            'genre', 'avg_score', 'std_dev', 'total_votes', 
+            'genres', 'avg_score', 'std_dev', 'total_votes', 
             'sentiment_gap', 'marmite_score', 
             'count_1s', 'count_2s', 'count_3s', 'count_4s', 'count_5s'
         ])
         
-        for genre, data in stats.items():
+        for genres, data in stats.items():
             t_sum, count, sum_sq = data[0], data[1], data[2]
             c1, c2, c3, c4, c5 = data[3], data[4], data[5], data[6], data[7]
             
+            # We keep your threshold of 1000 votes for the report
             if count > 1000:
                 avg = t_sum / count
-                std_dev = math.sqrt(max(0, (sum_sq / count) - (avg ** 2)))
-                # Marmite Score remains (1* + 5*) / total
+                # Population Standard Deviation
+                variance = max(0, (sum_sq / count) - (avg ** 2))
+                std_dev = math.sqrt(variance)
+                
+                # Marmite Score: % of extreme opinions (1 and 5 stars)
                 marmite = round(((c1 + c5) / count) * 100, 2)
                 
                 writer.writerow([
-                    genre, round(avg, 4), round(std_dev, 4), count, 
+                    genres, round(avg, 4), round(std_dev, 4), count, 
                     round(avg - global_avg, 4), marmite,
                     c1, c2, c3, c4, c5
                 ])
