@@ -62,7 +62,7 @@ docker compose down -v
 下载文件夹
 https://files.grouplens.org/datasets/movielens/ml-latest.zip
 
-删除无用数据, 两个genome文件
+解压缩以后删除无用数据, 两个genome文件
 ```bash
 rm genome*
 ```
