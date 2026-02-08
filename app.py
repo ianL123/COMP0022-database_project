@@ -106,15 +106,33 @@ def predict():
     """
     处理电影评分预测请求。
     GET: 显示空表单。
-    POST: 接收表单数据，调用 predict_algo 计算，返回结果。
+    POST: 接收表单数据，调用 predict_algo 计算，返回结果，并回填表单。
     """
     prediction_result = None
-    
-    if request.method == 'POST':
-        # 调用 predict.py 中的逻辑
-        prediction_result = predict_algo.get_prediction(db.session, request.form)
 
-    return render_template('predict.html', prediction=prediction_result)
+    # 关键：准备一个可回填的 dict（GET 也要传给模板）
+    form_data = {
+        "genre": "",
+        "director": "",
+        "actors": "",
+        "runtime": "",
+        "tags": ""
+    }
+
+    if request.method == 'POST':
+        # 关键：把 request.form 转成普通 dict，避免 ImmutableMultiDict 的坑
+        form_data = {
+            "genre": request.form.get("genre", ""),
+            "director": request.form.get("director", ""),
+            "actors": request.form.get("actors", ""),
+            "runtime": request.form.get("runtime", ""),
+            "tags": request.form.get("tags", "")
+        }
+
+        prediction_result = predict_algo.get_prediction(db.session, form_data)
+
+    return render_template('predict.html', prediction=prediction_result, form_data=form_data)
+
 
 # === Task 3: Audience Affinity (Chord Diagram) ===
 @app.route('/task3')
