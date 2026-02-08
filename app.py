@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
-import analytics
+import task2
 
 app = Flask(__name__)
 
@@ -96,9 +96,9 @@ def reports():
     Displays the analysis reports for Popularity and Polarization.
     Fetches data using the analytics module.
     """
-    # Call functions from analytics.py
-    popularity_data = analytics.get_genre_popularity(db.session)
-    polarization_data = analytics.get_genre_polarization(db.session)
+    # Call functions from task2.py
+    popularity_data = task2.get_genre_popularity(db.session)
+    polarization_data = task2.get_genre_polarization(db.session)
     
     return render_template('task2.html', 
                            popularity=popularity_data, 
