@@ -64,6 +64,14 @@ CREATE TABLE IF NOT EXISTS genre_stats_summary (
     count_5s INT
 );
 
+CREATE TABLE IF NOT EXISTS others (
+    movieId INT PRIMARY KEY,
+    runtimeMinutes INT,
+    directors VARCHAR(100),
+    topCast VARCHAR(255),
+    regions VARCHAR(255)
+);
+
 INSERT INTO init_run_log(stage) VALUES ('tables_created');
 
 -- 3. Data Loading
@@ -103,11 +111,18 @@ IGNORE INTO TABLE genre_stats_summary
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
 LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
+LOAD DATA INFILE '/var/lib/mysql-files/others.csv' 
+IGNORE INTO TABLE others
+FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
+LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+
 -- Speed up Title searches
 CREATE INDEX idx_movie_title ON movies(title);
 -- This allows the JOIN to find ratings for a specific movieId instantly
 CREATE INDEX idx_ratings_movieid ON ratings(movieId);
 -- Speed up the "Top Rated" sorting on the home page
 CREATE INDEX idx_avg_rating ON average_ratings(avg_rating);
+
+CREATE INDEX idx_others_movieid ON others(movieId);
 
 INSERT INTO init_run_log(stage) VALUES ('finished');

@@ -16,19 +16,20 @@ def index():
     results = []
     alerts = []
 
-    # Get search inputs
-    f_title = request.form.get('title', '')
-    f_genre = request.form.get('genre', '')
-    f_tag = request.form.get('tag', '') # We handle this carefully now
-    f_year_start = request.form.get('year_start', '')
-    f_year_end = request.form.get('year_end', '')
+    # Get Core inputs
+    f_title = request.form.get('title', '').strip()
+    f_genre = request.form.get('genre', '').strip()
+    f_tag = request.form.get('tag', '').strip()
+    f_year_start = request.form.get('year_start', '').strip()
+    f_year_end = request.form.get('year_end', '').strip()
 
-    # ... [Alerts logic remains the same] ...
+    # Get Advanced inputs
+    f_director = request.form.get('director', '').strip()
+    f_actor = request.form.get('actor', '').strip()
+    f_runtime = request.form.get('runtime', '').strip()
+    f_region = request.form.get('region', '').strip() # Added region support
 
-    # OPTIMIZED SQL:
-    # 1. We only join 'tags' if the user actually searched for a specific tag.
-    # 2. We remove GROUP_CONCAT which is extremely slow on large datasets.
-    
+    # Base SQL - Using LEFT JOIN for the 'others' metadata
     base_sql = """
         SELECT 
             m.movieId,
@@ -36,12 +37,16 @@ def index():
             m.genres,
             SUBSTRING(m.title, -5, 4) AS release_year,
             r.avg_rating,
-            r.count as vote_count
+            r.count as vote_count,
+            o.directors,
+            o.topCast,
+            o.runtimeMinutes,
+            o.regions
         FROM movies m
         INNER JOIN average_ratings r ON m.movieId = r.movieId
+        LEFT JOIN others o ON m.movieId = o.movieId
     """
     
-    # If user wants a specific tag, we use an EXISTS clause (much faster than a JOIN + GROUP BY)
     tag_filter = ""
     if f_tag:
         tag_filter = " AND EXISTS (SELECT 1 FROM tags t WHERE t.movieId = m.movieId AND t.tag LIKE :tag)"
@@ -51,10 +56,13 @@ def index():
         AND m.genres LIKE :genre
         AND (:year_start = '' OR SUBSTRING(m.title, -5, 4) >= :year_start)
         AND (:year_end = '' OR SUBSTRING(m.title, -5, 4) <= :year_end)
+        AND (:director = '' OR o.directors LIKE :director)
+        AND (:actor = '' OR o.topCast LIKE :actor)
+        AND (:runtime = '' OR o.runtimeMinutes >= :runtime)
+        AND (:region = '' OR o.regions LIKE :region)
     """
 
     order_by = "ORDER BY r.count DESC"
-    
     sql = f"{base_sql} {where_clause} {tag_filter} {order_by} LIMIT 50"
     
     params = {
@@ -62,17 +70,25 @@ def index():
         'genre': f'%{f_genre}%',
         'tag': f'%{f_tag}%',
         'year_start': f_year_start,
-        'year_end': f_year_end
+        'year_end': f_year_end,
+        'director': f'%{f_director}%',
+        'actor': f'%{f_actor}%',
+        'runtime': f_runtime,
+        'region': f'%{f_region}%'
     }
 
     try:
         results = db.session.execute(text(sql), params).fetchall()
+        
+        # Check if we have 'others' data for these results to trigger dashboard alerts
+        if results and any(row.directors is None for row in results):
+            alerts.append("Some movies are missing extended metadata (directors/cast).")
+            
     except Exception as e:
         print(f"Database Error: {e}")
-        alerts.append("Query error - Check if database is fully loaded.")
+        alerts.append("Query error - Check if 'others' table schema matches Python keys.")
 
     return render_template('index.html', results=results, alerts=alerts, inputs=request.form)
-
 # === Task 2: Analytics Reports Route ===
 @app.route('/reports')
 def reports():
