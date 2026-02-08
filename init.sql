@@ -123,4 +123,6 @@ CREATE INDEX idx_ratings_movieid ON ratings(movieId);
 -- Speed up the "Top Rated" sorting on the home page
 CREATE INDEX idx_avg_rating ON average_ratings(avg_rating);
 
+CREATE INDEX idx_others_movieid ON others(movieId);
+
 INSERT INTO init_run_log(stage) VALUES ('finished');
