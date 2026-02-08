@@ -7,11 +7,16 @@ from collections import defaultdict
 DATA_DIR = '../ml-latest'
 INPUT_MOVIES = os.path.join(DATA_DIR, 'movies.csv')
 INPUT_RATINGS = os.path.join(DATA_DIR, 'ratings.csv')
+INPUT_OTHERS = os.path.join(DATA_DIR, 'others.csv')
 
 # Output Files
 OUTPUT_AVG_RATINGS = os.path.join(DATA_DIR, 'average_ratings.csv')
 OUTPUT_GENRE_STATS = os.path.join(DATA_DIR, 'genre_stats_summary.csv')
 OUTPUT_MOVIE_GENRES = os.path.join(DATA_DIR, 'movie_genres.csv')
+OUTPUT_DIRECTORS = os.path.join(DATA_DIR, 'movie_directors.csv')
+OUTPUT_CAST = os.path.join(DATA_DIR, 'movie_cast.csv')
+OUTPUT_REGIONS = os.path.join(DATA_DIR, 'movie_regions.csv')
+OUTPUT_GENRE_AFFINITY = os.path.join(DATA_DIR, 'genre_affinity.csv')
 
 def process_movie_genres():
     """Script 3 logic: Explodes movies.csv into a long-form movieId-genre mapping."""
@@ -124,9 +129,105 @@ def process_advanced_genre_stats():
                 ])
     print(f"   - Success: Created {OUTPUT_GENRE_STATS}")
 
+def process_others_metadata():
+    """Script 4 logic: Explodes others.csv into normalized directors, cast, and regions tables."""
+    print(f"4. Exploding metadata from {INPUT_OTHERS}...")
+
+    if not os.path.exists(INPUT_OTHERS):
+        print(f"   - Warning: {INPUT_OTHERS} not found. Skipping.")
+        return
+
+    with open(INPUT_OTHERS, mode='r', encoding='utf-8') as fin:
+        reader = csv.DictReader(fin)
+        
+        with open(OUTPUT_DIRECTORS, 'w', encoding='utf-8', newline='') as f_dir, \
+             open(OUTPUT_CAST, 'w', encoding='utf-8', newline='') as f_cast, \
+             open(OUTPUT_REGIONS, 'w', encoding='utf-8', newline='') as f_reg:
+            
+            w_dir = csv.writer(f_dir)
+            w_cast = csv.writer(f_cast)
+            w_reg = csv.writer(f_reg)
+            
+            # Write Headers
+            w_dir.writerow(['movieId', 'director'])
+            w_cast.writerow(['movieId', 'actor'])
+            w_reg.writerow(['movieId', 'region'])
+
+            for row in reader:
+                mid = row['movieId']
+                
+                # Normalize Directors
+                if row['directors']:
+                    for d in row['directors'].split('|'):
+                        if d.strip(): w_dir.writerow([mid, d.strip()])
+                
+                # Normalize Cast
+                if row['topCast']:
+                    for c in row['topCast'].split('|'):
+                        if c.strip(): w_cast.writerow([mid, c.strip()])
+                
+                # Normalize Regions
+                if row['regions']:
+                    for r in row['regions'].split('|'):
+                        if r.strip(): w_reg.writerow([mid, r.strip()])
+                        
+    print(f"   - Success: Created normalized metadata CSVs.")
+
+def process_genre_affinity():
+    print(f"4. Calculating Normalized Genre Affinity...")
+    
+    movie_genres = {}
+    with open(INPUT_MOVIES, 'r', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            if row['genres'] != '(no genres listed)':
+                movie_genres[row['movieId']] = row['genres'].split('|')
+
+    user_to_genres = defaultdict(set)
+    genre_totals = defaultdict(int) # Unique users per genre
+
+    with open(INPUT_RATINGS, 'r', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            if float(row['rating']) >= 4.0:
+                m_id, u_id = row['movieId'], row['userId']
+                if m_id in movie_genres:
+                    for g in movie_genres[m_id]:
+                        user_to_genres[u_id].add(g)
+
+    # Calculate total unique lovers for each genre (denominator part 1)
+    for genres in user_to_genres.values():
+        for g in genres:
+            genre_totals[g] += 1
+
+    # Count intersections
+    affinity_counts = defaultdict(int)
+    for genres in user_to_genres.values():
+        sorted_genres = sorted(list(genres))
+        for i in range(len(sorted_genres)):
+            for j in range(i + 1, len(sorted_genres)):
+                pair = (sorted_genres[i], sorted_genres[j])
+                affinity_counts[pair] += 1
+
+    # Write Results with Normalized Score
+    with open(OUTPUT_GENRE_AFFINITY, 'w', newline='', encoding='utf-8') as f:
+        writer = csv.writer(f)
+        writer.writerow(['source', 'target', 'value', 'score'])
+        for (g1, g2), count in affinity_counts.items():
+            # Jaccard Score = Intersection / Union
+            # Union(A,B) = Total(A) + Total(B) - Intersection(A,B)
+            union = genre_totals[g1] + genre_totals[g2] - count
+            score = count / union if union > 0 else 0
+            
+            if count > 5:
+                writer.writerow([g1, g2, count, round(score, 4)])
+    print(f"   - Success: Created {OUTPUT_GENRE_AFFINITY}")
+
 if __name__ == "__main__":
     print("--- Starting Unified Pipeline ---")
     process_movie_genres()
     process_average_ratings()
     process_advanced_genre_stats()
+    process_others_metadata()
+    process_genre_affinity()
     print("--- All Tasks Complete ---")
