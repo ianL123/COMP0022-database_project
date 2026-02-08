@@ -64,11 +64,32 @@ CREATE TABLE IF NOT EXISTS genre_stats_summary (
     count_5s INT
 );
 
+-- [新增] 导演表
+CREATE TABLE IF NOT EXISTS movie_directors (
+    movieId INT NOT NULL,
+    director VARCHAR(100) NOT NULL,
+    PRIMARY KEY (movieId, director)
+);
+
+-- [新增] 演员表
+CREATE TABLE IF NOT EXISTS movie_cast (
+    movieId INT NOT NULL,
+    actor VARCHAR(100) NOT NULL,
+    PRIMARY KEY (movieId, actor)
+);
+
+-- [新增] 地区表
+CREATE TABLE IF NOT EXISTS movie_regions (
+    movieId INT NOT NULL,
+    region VARCHAR(50) NOT NULL, -- Region codes usually short
+    PRIMARY KEY (movieId, region)
+);
+
 CREATE TABLE IF NOT EXISTS others (
     movieId INT PRIMARY KEY,
     runtimeMinutes INT,
-    directors VARCHAR(100),
-    topCast VARCHAR(255),
+    directors VARCHAR(255),
+    topCast VARCHAR(500),
     regions VARCHAR(255)
 );
 
@@ -116,6 +137,22 @@ IGNORE INTO TABLE others
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
 LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
+-- [新增] 加载新生成的规范化数据
+LOAD DATA INFILE '/var/lib/mysql-files/movie_directors.csv' 
+IGNORE INTO TABLE movie_directors
+FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
+LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+
+LOAD DATA INFILE '/var/lib/mysql-files/movie_cast.csv' 
+IGNORE INTO TABLE movie_cast
+FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
+LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+
+LOAD DATA INFILE '/var/lib/mysql-files/movie_regions.csv' 
+IGNORE INTO TABLE movie_regions
+FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
+LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+
 -- Speed up Title searches
 CREATE INDEX idx_movie_title ON movies(title);
 -- This allows the JOIN to find ratings for a specific movieId instantly
@@ -124,5 +161,10 @@ CREATE INDEX idx_ratings_movieid ON ratings(movieId);
 CREATE INDEX idx_avg_rating ON average_ratings(avg_rating);
 
 CREATE INDEX idx_others_movieid ON others(movieId);
+
+-- [新增] 为新表增加索引以备未来优化查询
+CREATE INDEX idx_director_name ON movie_directors(director);
+CREATE INDEX idx_actor_name ON movie_cast(actor);
+CREATE INDEX idx_region_code ON movie_regions(region);
 
 INSERT INTO init_run_log(stage) VALUES ('finished');
