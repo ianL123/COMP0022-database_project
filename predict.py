@@ -196,10 +196,16 @@ def get_prediction(db_session, form_data):
             })
 
         predicted_score = numerator / denominator if denominator > 0 else 0
-
+        
+        num_matches = len(results)
+        avg_similarity = denominator / num_matches if num_matches > 0 else 0
         confidence_level = "Low"
-        if denominator > 50: confidence_level = "High"
-        elif denominator > 20: confidence_level = "Medium"
+        if avg_similarity >= 4.0: 
+            confidence_level = "High"
+        elif avg_similarity >= 2.0: 
+            confidence_level = "Medium"
+        else:
+            confidence_level = "Low"
 
         return {
             'predicted_score': round(predicted_score, 2),
