@@ -1,3 +1,4 @@
+// static/js/chord_chart.js
 function drawChordChart(data) {
     const names = Array.from(new Set(data.flatMap(d => [d.source, d.target])));
     const index = new Map(names.map((name, i) => [name, i]));
@@ -13,19 +14,21 @@ function drawChordChart(data) {
         scoreMatrix[index.get(d.target)][index.get(d.source)] = d.score;
     });
 
-    const width = 650, height = 650;
-    const outerRadius = Math.min(width, height) * 0.5 - 100;
-    const innerRadius = outerRadius - 20;
+    const width = 720, height = 720;
+    const outerRadius = Math.min(width, height) * 0.5 - 120;
+    const innerRadius = outerRadius - 25;
 
     const svg = d3.select("#chord-chart")
-        .html("") // Clear the container
+        .html("") 
         .append("svg")
         .attr("viewBox", [-width / 2, -height / 2, width, height]);
 
-    // Color Scale: Yellow (low affinity) to Deep Blue (high affinity)
-    const colorScale = d3.scaleSequential()
-        .domain([0, d3.max(data, d => d.score)])
-        .interpolator(d3.interpolateYlGnBu);
+    // EXPONENTIAL STRATEGY:
+    // scaleSequentialPow with exponent(3) ensures that only very high scores
+    // get the deep blue colors. Middle-to-low scores will stay significantly lighter.
+    const colorScale = d3.scaleSequentialPow(d3.interpolateYlGnBu)
+        .exponent(1) 
+        .domain([0, d3.max(data, d => d.score)]);
 
     const chord = d3.chord().padAngle(0.04).sortSubgroups(d3.descending)(matrix);
     const arc = d3.arc().innerRadius(innerRadius).outerRadius(outerRadius);
@@ -35,7 +38,7 @@ function drawChordChart(data) {
 
     // Draw Arcs
     group.append("path")
-        .attr("fill", "#333")
+        .attr("fill", "#2c3e50")
         .attr("d", arc);
 
     // Labels
@@ -44,24 +47,39 @@ function drawChordChart(data) {
         .attr("dy", ".35em")
         .attr("transform", d => `
             rotate(${(d.angle * 180 / Math.PI - 90)})
-            translate(${outerRadius + 10})
+            translate(${outerRadius + 12})
             ${d.angle > Math.PI ? "rotate(180)" : ""}
         `)
         .attr("text-anchor", d => d.angle > Math.PI ? "end" : "start")
         .text(d => names[d.index])
-        .style("font-size", "12px")
+        .style("font-family", "sans-serif")
+        .style("font-size", "13px")
         .style("font-weight", "600");
 
     // Draw Ribbons
     svg.append("g")
-        .attr("fill-opacity", 0.8)
         .selectAll("path")
         .data(chord)
         .join("path")
         .attr("class", "chord-ribbon")
         .attr("d", ribbon)
         .attr("fill", d => colorScale(scoreMatrix[d.source.index][d.target.index]))
-        .attr("stroke", d => d3.rgb(colorScale(scoreMatrix[d.source.index][d.target.index])).darker())
+        // DYNAMIC OPACITY: Higher scores get higher visibility
+        .attr("fill-opacity", d => {
+            const s = scoreMatrix[d.source.index][d.target.index];
+            return d3.scalePow().exponent(2).domain([0, 1]).range([0.1, 0.85])(s);
+        })
+        // BORDER: Darker stroke only for high-affinity connections
+        .attr("stroke", d => {
+            const s = scoreMatrix[d.source.index][d.target.index];
+            return s > 0.7 ? d3.rgb(colorScale(s)).darker() : "none";
+        })
+        .style("mix-blend-mode", "multiply")
         .append("title")
-        .text(d => `${names[d.source.index]} ↔ ${names[d.target.index]}\nShared Fans: ${matrix[d.source.index][d.target.index]}\nAffinity Score: ${(scoreMatrix[d.source.index][d.target.index] * 100).toFixed(2)}%`);
+        .text(d => {
+            const s = names[d.source.index];
+            const t = names[d.target.index];
+            const score = scoreMatrix[d.source.index][d.target.index];
+            return `${s} ↔ ${t}\nShared Fans: ${matrix[d.source.index][d.target.index]}\nAffinity Score: ${(score * 100).toFixed(2)}%`;
+        });
 }
