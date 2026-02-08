@@ -64,6 +64,14 @@ CREATE TABLE IF NOT EXISTS genre_stats_summary (
     count_5s INT
 );
 
+CREATE TABLE IF NOT EXISTS others (
+    movieId INT PRIMARY KEY,
+    runtimeMinuites INT,
+    directors VARCHAR(100),
+    topCast VARCHAR(255),
+    regions VARCHAR(255)
+);
+
 INSERT INTO init_run_log(stage) VALUES ('tables_created');
 
 -- 3. Data Loading
@@ -100,6 +108,11 @@ LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
 LOAD DATA INFILE '/var/lib/mysql-files/genre_stats_summary.csv' 
 IGNORE INTO TABLE genre_stats_summary
+FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
+LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+
+LOAD DATA INFILE '/var/lib/mysql-files/others.csv' 
+IGNORE INTO TABLE others
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
 LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
