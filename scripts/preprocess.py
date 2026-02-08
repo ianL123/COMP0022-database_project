@@ -12,6 +12,7 @@ INPUT_RATINGS = os.path.join(DATA_DIR, 'ratings.csv')
 OUTPUT_AVG_RATINGS = os.path.join(DATA_DIR, 'average_ratings.csv')
 OUTPUT_GENRE_STATS = os.path.join(DATA_DIR, 'genre_stats_summary.csv')
 OUTPUT_MOVIE_GENRES = os.path.join(DATA_DIR, 'movie_genres.csv')
+OUTPUT_GENRE_AFFINITY = os.path.join(DATA_DIR, 'genre_affinity.csv')
 
 def process_movie_genres():
     """Script 3 logic: Explodes movies.csv into a long-form movieId-genre mapping."""
@@ -124,9 +125,53 @@ def process_advanced_genre_stats():
                 ])
     print(f"   - Success: Created {OUTPUT_GENRE_STATS}")
 
+def process_genre_affinity():
+    """New Logic: Calculates correlations between genres based on high user ratings (4.0+)."""
+    print(f"4. Calculating genre affinity correlations from {INPUT_RATINGS}...")
+    
+    # Map Movie IDs to Genres (O(M))
+    movie_genres = {}
+    with open(INPUT_MOVIES, 'r', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            if row['genres'] != '(no genres listed)':
+                movie_genres[row['movieId']] = row['genres'].split('|')
+
+    # Group Genres by User (O(R))
+    user_to_genres = defaultdict(set)
+    with open(INPUT_RATINGS, 'r', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            # We filter for high affinity (4.0+)
+            if float(row['rating']) >= 4.0:
+                m_id, u_id = row['movieId'], row['userId']
+                if m_id in movie_genres:
+                    for g in movie_genres[m_id]:
+                        user_to_genres[u_id].add(g)
+
+    # Count Co-occurrences (O(U * G^2))
+    affinity_counts = defaultdict(int)
+    for genres in user_to_genres.values():
+        sorted_genres = sorted(list(genres))
+        for i in range(len(sorted_genres)):
+            for j in range(i + 1, len(sorted_genres)):
+                pair = (sorted_genres[i], sorted_genres[j])
+                affinity_counts[pair] += 1
+
+    # Write Results (Filter noise > 5)
+    with open(OUTPUT_GENRE_AFFINITY, 'w', newline='', encoding='utf-8') as f:
+        writer = csv.writer(f)
+        writer.writerow(['source', 'target', 'value'])
+        for (g1, g2), count in affinity_counts.items():
+            if count > 5:
+                writer.writerow([g1, g2, count])
+    print(f"   - Success: Created {OUTPUT_GENRE_AFFINITY}")
+
+
 if __name__ == "__main__":
     print("--- Starting Unified Pipeline ---")
     process_movie_genres()
     process_average_ratings()
     process_advanced_genre_stats()
+    process_genre_affinity()
     print("--- All Tasks Complete ---")
