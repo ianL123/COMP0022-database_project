@@ -1,18 +1,18 @@
 from sqlalchemy import text
+import re
 
 def get_prediction(db_session, form_data):
     """
     基于 Nearest Neighbor 算法预测评分并推荐相似电影。
     
-    逻辑：
-    1. 获取用户输入的新电影特征 (Director, Actor, Genre, Tag, Runtime)。
-    2. 在数据库中查找匹配这些特征的旧电影，并根据匹配程度打分 (Similarity Score)。
-    3. 聚合匹配分数，找出最相似的 Top 20 电影。
-    4. 计算这 Top 20 电影的加权平均分作为预测结果。
+    【优化更新】：
+    1. 使用 REGEXP 实现精确的“单词匹配”，避免 "o" 匹配 "Tom"。
+    2. 标签 (Tags) 匹配逻辑改为 DISTINCT，防止同一部电影因命中多个标签导致分数爆炸。
+    3. 支持复杂的标签分隔符 (冒号、括号、问号等)。
     """
     
     # --- 1. 获取输入 ---
-    p_genre = form_data.get('genre', '').strip()  # 获取原始字符串
+    p_genre = form_data.get('genre', '').strip()
     p_director = form_data.get('director', '').strip()
     p_actors = form_data.get('actors', '').strip()
     p_tags = form_data.get('tags', '').strip()
@@ -21,50 +21,93 @@ def get_prediction(db_session, form_data):
     # 权重定义 (Heuristic Weights)
     WEIGHTS = {
         'director': 5.0,  
-        'actor': 3.0,     
-        'genre': 2.0,     # 每个匹配的类型都加分
-        'tag': 1.0,       
+        'actor': 2.0,     
+        'genre': 3.0,     
+        'tag': 5.0,       
         'runtime': 1.0    
     }
 
-    # 处理列表输入 (逗号分隔)
+    # 处理列表输入
     genre_list = [g.strip() for g in p_genre.split(',') if g.strip()]
     actor_list = [a.strip() for a in p_actors.split(',') if a.strip()]
     tag_list = [t.strip() for t in p_tags.split(',') if t.strip()]
 
-    # --- 2. 构建 SQL 查询 (Feature Matching) ---
     selects = []
     params = {}
 
-    # A. 导演匹配
-    if p_director:
-        selects.append(f"SELECT movieId, {WEIGHTS['director']} as score FROM others WHERE directors LIKE :director")
-        params['director'] = f"%{p_director}%"
+    # === 辅助函数：生成精确匹配的正则字符串 ===
+    def build_strict_regex(term, mode='name'):
+        # 转义特殊字符，防止用户输入导致正则报错
+        clean_term = re.escape(term)
+        
+        if mode == 'name':
+            # 名字匹配：前后必须是字符串边界，或者非字母数字字符
+            # 这样 'o' 不会匹配 'Tom'，但 'Nolan' 会匹配 'Christopher Nolan'
+            return f"(^|[^a-zA-Z0-9]){clean_term}([^a-zA-Z0-9]|$)"
+            
+        elif mode == 'tag':
+            # 标签匹配：根据你的要求，分隔符可以是 逗号, 空格, 左括号(, 右括号), 冒号:, 问号?
+            # 这里的正则逻辑是：
+            # 前面是：开头 OR 分隔符
+            # 后面是：结尾 OR 分隔符
+            # [ ,(:?] 表示字符集合
+            return f"(^|[ ,(:?]){clean_term}([ ,):?]|$)"
 
-    # B. 演员匹配
+    # ---------------------------------------------------------
+    # A. 导演匹配 (精确匹配)
+    # ---------------------------------------------------------
+    if p_director:
+        # 使用 REGEXP
+        selects.append(f"SELECT movieId, {WEIGHTS['director']} as score FROM others WHERE directors REGEXP :director_regex")
+        params['director_regex'] = build_strict_regex(p_director, 'name')
+
+    # ---------------------------------------------------------
+    # B. 演员匹配 (精确匹配)
+    # ---------------------------------------------------------
     for i, actor in enumerate(actor_list):
         key = f"actor_{i}"
-        selects.append(f"SELECT movieId, {WEIGHTS['actor']} as score FROM others WHERE topCast LIKE :{key}")
-        params[key] = f"%{actor}%"
+        selects.append(f"SELECT movieId, {WEIGHTS['actor']} as score FROM others WHERE topCast REGEXP :{key}")
+        params[key] = build_strict_regex(actor, 'name')
 
-    # C. 类型匹配 (Genre Match) - [已修改为精确匹配]
+    # ---------------------------------------------------------
+    # C. 类型匹配 (精确匹配)
+    # ---------------------------------------------------------
     for i, genre in enumerate(genre_list):
         key = f"genre_{i}"
-        # 使用 REGEXP (正则表达式) 进行精确单词匹配
-        # 逻辑：匹配 "Action" 本身，或者 "Action|..."，或者 "...|Action"
-        # 这样既能保证必须是这个词 (一模一样)，又不会漏掉多类型的电影
+        # 使用正则确保匹配 "Action" 而不是 "Reaction"
+        # 这里的边界通常是 | (竖线) 或者字符串起止
         selects.append(f"SELECT movieId, {WEIGHTS['genre']} as score FROM movies WHERE genres REGEXP :{key}")
-        # 正则表达式：(^|\|)词(\||$)
-        # 注意：Python 字符串里 | 需要转义，所以写成 \\|
-        params[key] = f"(^|\\|){genre}(\\||$)"
+        params[key] = f"(^|\\|){re.escape(genre)}(\\||$)"
 
-    # D. 标签匹配
-    for i, tag in enumerate(tag_list):
-        key = f"tag_{i}"
-        selects.append(f"SELECT movieId, {WEIGHTS['tag']} as score FROM tags WHERE tag LIKE :{key}")
-        params[key] = f"%{tag}%"
+    # ---------------------------------------------------------
+    # D. 标签匹配 (去重 & 复杂分隔符匹配) - [核心修改点]
+    # ---------------------------------------------------------
+    if tag_list:
+        # 我们不使用循环生成多个 SELECT (这会导致分数叠加)
+        # 而是生成一个大的 OR 查询，并使用 DISTINCT 确保每部电影只加一次分
+        
+        tag_conditions = []
+        for i, tag in enumerate(tag_list):
+            key = f"tag_rx_{i}"
+            # 构造针对该 tag 的正则条件
+            tag_conditions.append(f"tag REGEXP :{key}")
+            params[key] = build_strict_regex(tag, 'tag')
+        
+        # 用 OR 连接所有标签条件
+        combined_condition = " OR ".join(tag_conditions)
+        
+        # 使用 SELECT DISTINCT ! 
+        # 这样无论电影匹配了多少个标签，或者同一个标签出现了多少次，只返回一行，只加一次分
+        sql_tags = f"""
+            SELECT DISTINCT movieId, {WEIGHTS['tag']} as score 
+            FROM tags 
+            WHERE {combined_condition}
+        """
+        selects.append(sql_tags)
 
-    # E. 时长匹配
+    # ---------------------------------------------------------
+    # E. 时长匹配 (保持不变)
+    # ---------------------------------------------------------
     if p_runtime:
         try:
             rt = int(p_runtime)
@@ -90,11 +133,11 @@ def get_prediction(db_session, form_data):
         except ValueError:
             pass 
 
-    # 如果用户没有输入任何有效条件
+    # --- 兜底逻辑 ---
     if not selects:
-        return {'error': 'Please enter at least one criteria (Genre, Director, Actor, etc.) to generate a prediction.'}
+        return {'error': 'Please enter at least one criteria to generate a prediction.'}
 
-# --- 3. 组合最终查询 ---
+    # --- 3. 组合最终查询 ---
     full_sql = " UNION ALL ".join(selects)
 
     final_query = f"""
