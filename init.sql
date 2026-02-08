@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS genre_stats_summary (
 
 CREATE TABLE IF NOT EXISTS others (
     movieId INT PRIMARY KEY,
-    runtimeMinuites INT,
+    runtimeMinutes INT,
     directors VARCHAR(100),
     topCast VARCHAR(255),
     regions VARCHAR(255)
