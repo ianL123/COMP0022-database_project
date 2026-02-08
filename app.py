@@ -17,11 +17,14 @@ def index():
     alerts = []
 
     # Get search inputs
-    f_title = request.form.get('title', '')
-    f_genre = request.form.get('genre', '')
-    f_tag = request.form.get('tag', '') # We handle this carefully now
-    f_year_start = request.form.get('year_start', '')
-    f_year_end = request.form.get('year_end', '')
+    f_title = request.form.get('title', '').strip()
+    f_genre = request.form.get('genre', '').strip()
+    f_tag = request.form.get('tag', '').strip() # We handle this carefully now
+    f_year_start = request.form.get('year_start', '').strip()
+    f_year_end = request.form.get('year_end', '').strip()
+
+    genre_list = f_genre.split('|')
+    f_genre = genre_list.sort()
 
     # ... [Alerts logic remains the same] ...
 
