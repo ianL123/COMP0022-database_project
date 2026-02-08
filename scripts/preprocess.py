@@ -126,10 +126,8 @@ def process_advanced_genre_stats():
     print(f"   - Success: Created {OUTPUT_GENRE_STATS}")
 
 def process_genre_affinity():
-    """New Logic: Calculates correlations between genres based on high user ratings (4.0+)."""
-    print(f"4. Calculating genre affinity correlations from {INPUT_RATINGS}...")
+    print(f"4. Calculating Normalized Genre Affinity...")
     
-    # Map Movie IDs to Genres (O(M))
     movie_genres = {}
     with open(INPUT_MOVIES, 'r', encoding='utf-8') as f:
         reader = csv.DictReader(f)
@@ -137,19 +135,24 @@ def process_genre_affinity():
             if row['genres'] != '(no genres listed)':
                 movie_genres[row['movieId']] = row['genres'].split('|')
 
-    # Group Genres by User (O(R))
     user_to_genres = defaultdict(set)
+    genre_totals = defaultdict(int) # Unique users per genre
+
     with open(INPUT_RATINGS, 'r', encoding='utf-8') as f:
         reader = csv.DictReader(f)
         for row in reader:
-            # We filter for high affinity (4.0+)
             if float(row['rating']) >= 4.0:
                 m_id, u_id = row['movieId'], row['userId']
                 if m_id in movie_genres:
                     for g in movie_genres[m_id]:
                         user_to_genres[u_id].add(g)
 
-    # Count Co-occurrences (O(U * G^2))
+    # Calculate total unique lovers for each genre (denominator part 1)
+    for genres in user_to_genres.values():
+        for g in genres:
+            genre_totals[g] += 1
+
+    # Count intersections
     affinity_counts = defaultdict(int)
     for genres in user_to_genres.values():
         sorted_genres = sorted(list(genres))
@@ -158,15 +161,19 @@ def process_genre_affinity():
                 pair = (sorted_genres[i], sorted_genres[j])
                 affinity_counts[pair] += 1
 
-    # Write Results (Filter noise > 5)
+    # Write Results with Normalized Score
     with open(OUTPUT_GENRE_AFFINITY, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
-        writer.writerow(['source', 'target', 'value'])
+        writer.writerow(['source', 'target', 'value', 'score'])
         for (g1, g2), count in affinity_counts.items():
+            # Jaccard Score = Intersection / Union
+            # Union(A,B) = Total(A) + Total(B) - Intersection(A,B)
+            union = genre_totals[g1] + genre_totals[g2] - count
+            score = count / union if union > 0 else 0
+            
             if count > 5:
-                writer.writerow([g1, g2, count])
+                writer.writerow([g1, g2, count, round(score, 4)])
     print(f"   - Success: Created {OUTPUT_GENRE_AFFINITY}")
-
 
 if __name__ == "__main__":
     print("--- Starting Unified Pipeline ---")

@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
-import task2
+import analytics
 
 app = Flask(__name__)
 
@@ -27,9 +27,8 @@ def index():
     f_director = request.form.get('director', '').strip()
     f_actor = request.form.get('actor', '').strip()
     f_runtime = request.form.get('runtime', '').strip()
-    f_region = request.form.get('region', '').strip() # Added region support
+    f_region = request.form.get('region', '').strip()
 
-    # Base SQL - Using LEFT JOIN for the 'others' metadata
     base_sql = """
         SELECT 
             m.movieId,
@@ -79,30 +78,37 @@ def index():
 
     try:
         results = db.session.execute(text(sql), params).fetchall()
-        
-        # Check if we have 'others' data for these results to trigger dashboard alerts
         if results and any(row.directors is None for row in results):
-            alerts.append("Some movies are missing extended metadata (directors/cast).")
-            
+            alerts.append("Some movies are missing extended metadata.")
     except Exception as e:
         print(f"Database Error: {e}")
-        alerts.append("Query error - Check if 'others' table schema matches Python keys.")
+        alerts.append("Query error - Check database connection.")
 
     return render_template('index.html', results=results, alerts=alerts, inputs=request.form)
+
 # === Task 2: Analytics Reports Route ===
 @app.route('/task2')
-def reports():
+def task2():
     """
     Displays the analysis reports for Popularity and Polarization.
-    Fetches data using the analytics module.
     """
-    # Call functions from task2.py
-    popularity_data = task2.get_genre_popularity(db.session)
-    polarization_data = task2.get_genre_polarization(db.session)
+    popularity_data = analytics.get_genre_popularity(db.session)
+    polarization_data = analytics.get_genre_polarization(db.session)
     
     return render_template('task2.html', 
                            popularity=popularity_data, 
                            polarization=polarization_data)
+
+# === Task 3: Audience Affinity (Chord Diagram) ===
+@app.route('/task3')
+def task3():
+    """
+    Calculates genre correlation based on high user ratings.
+    """
+    # This calls the algorithm that creates the source/target matrix
+    chord_data = analytics.get_genre_chord_data(db.session)
+    
+    return render_template('task3.html', chord_data=chord_data)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

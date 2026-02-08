@@ -30,13 +30,6 @@ CREATE TABLE IF NOT EXISTS links (
     tmdbId VARCHAR(20) -- Changed to VARCHAR to prevent failure on empty CSV cells
 );
 
-CREATE TABLE IF NOT EXISTS ratings (
-    userId INT NOT NULL,
-    movieId INT NOT NULL,
-    rating DECIMAL(3,1) NOT NULL,
-    timestamp BIGINT NOT NULL
-);
-
 CREATE TABLE IF NOT EXISTS tags (
     userId INT NOT NULL,
     movieId INT NOT NULL,
@@ -72,6 +65,13 @@ CREATE TABLE IF NOT EXISTS others (
     regions VARCHAR(255)
 );
 
+CREATE TABLE IF NOT EXISTS genre_affinity (
+    source VARCHAR(50),
+    target VARCHAR(50),
+    value INT,
+    score DECIMAL(5,4)
+);
+
 INSERT INTO init_run_log(stage) VALUES ('tables_created');
 
 -- 3. Data Loading
@@ -88,11 +88,6 @@ LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
 LOAD DATA INFILE '/var/lib/mysql-files/links.csv' 
 IGNORE INTO TABLE links 
-FIELDS TERMINATED BY ',' 
-LINES TERMINATED BY '\n' IGNORE 1 ROWS;
-
-LOAD DATA INFILE '/var/lib/mysql-files/ratings.csv' 
-IGNORE INTO TABLE ratings 
 FIELDS TERMINATED BY ',' 
 LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
@@ -116,10 +111,13 @@ IGNORE INTO TABLE others
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
 LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
+LOAD DATA INFILE '/var/lib/mysql-files/genre_affinity.csv' 
+INTO TABLE genre_affinity 
+FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
+LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+
 -- Speed up Title searches
 CREATE INDEX idx_movie_title ON movies(title);
--- This allows the JOIN to find ratings for a specific movieId instantly
-CREATE INDEX idx_ratings_movieid ON ratings(movieId);
 -- Speed up the "Top Rated" sorting on the home page
 CREATE INDEX idx_avg_rating ON average_ratings(avg_rating);
 
