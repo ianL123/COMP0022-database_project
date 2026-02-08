@@ -64,7 +64,7 @@ https://files.grouplens.org/datasets/movielens/ml-latest.zip
 
 解压缩以后删除无用数据, 两个genome文件
 ```bash
-rm genome*
+rm ml-latest/genome*
 ```
 
 运行预计算脚本

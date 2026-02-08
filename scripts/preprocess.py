@@ -7,11 +7,15 @@ from collections import defaultdict
 DATA_DIR = '../ml-latest'
 INPUT_MOVIES = os.path.join(DATA_DIR, 'movies.csv')
 INPUT_RATINGS = os.path.join(DATA_DIR, 'ratings.csv')
+INPUT_OTHERS = os.path.join(DATA_DIR, 'others.csv')
 
 # Output Files
 OUTPUT_AVG_RATINGS = os.path.join(DATA_DIR, 'average_ratings.csv')
 OUTPUT_GENRE_STATS = os.path.join(DATA_DIR, 'genre_stats_summary.csv')
 OUTPUT_MOVIE_GENRES = os.path.join(DATA_DIR, 'movie_genres.csv')
+OUTPUT_DIRECTORS = os.path.join(DATA_DIR, 'movie_directors.csv')
+OUTPUT_CAST = os.path.join(DATA_DIR, 'movie_cast.csv')
+OUTPUT_REGIONS = os.path.join(DATA_DIR, 'movie_regions.csv')
 OUTPUT_GENRE_AFFINITY = os.path.join(DATA_DIR, 'genre_affinity.csv')
 
 def process_movie_genres():
@@ -125,6 +129,50 @@ def process_advanced_genre_stats():
                 ])
     print(f"   - Success: Created {OUTPUT_GENRE_STATS}")
 
+def process_others_metadata():
+    """Script 4 logic: Explodes others.csv into normalized directors, cast, and regions tables."""
+    print(f"4. Exploding metadata from {INPUT_OTHERS}...")
+
+    if not os.path.exists(INPUT_OTHERS):
+        print(f"   - Warning: {INPUT_OTHERS} not found. Skipping.")
+        return
+
+    with open(INPUT_OTHERS, mode='r', encoding='utf-8') as fin:
+        reader = csv.DictReader(fin)
+        
+        with open(OUTPUT_DIRECTORS, 'w', encoding='utf-8', newline='') as f_dir, \
+             open(OUTPUT_CAST, 'w', encoding='utf-8', newline='') as f_cast, \
+             open(OUTPUT_REGIONS, 'w', encoding='utf-8', newline='') as f_reg:
+            
+            w_dir = csv.writer(f_dir)
+            w_cast = csv.writer(f_cast)
+            w_reg = csv.writer(f_reg)
+            
+            # Write Headers
+            w_dir.writerow(['movieId', 'director'])
+            w_cast.writerow(['movieId', 'actor'])
+            w_reg.writerow(['movieId', 'region'])
+
+            for row in reader:
+                mid = row['movieId']
+                
+                # Normalize Directors
+                if row['directors']:
+                    for d in row['directors'].split('|'):
+                        if d.strip(): w_dir.writerow([mid, d.strip()])
+                
+                # Normalize Cast
+                if row['topCast']:
+                    for c in row['topCast'].split('|'):
+                        if c.strip(): w_cast.writerow([mid, c.strip()])
+                
+                # Normalize Regions
+                if row['regions']:
+                    for r in row['regions'].split('|'):
+                        if r.strip(): w_reg.writerow([mid, r.strip()])
+                        
+    print(f"   - Success: Created normalized metadata CSVs.")
+
 def process_genre_affinity():
     print(f"4. Calculating Normalized Genre Affinity...")
     
@@ -180,5 +228,6 @@ if __name__ == "__main__":
     process_movie_genres()
     process_average_ratings()
     process_advanced_genre_stats()
+    process_others_metadata()
     process_genre_affinity()
     print("--- All Tasks Complete ---")

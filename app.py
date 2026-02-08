@@ -2,6 +2,7 @@ from flask import Flask, render_template, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
 import analytics
+import predict as predict_algo
 
 app = Flask(__name__)
 
@@ -98,6 +99,22 @@ def task2():
     return render_template('task2.html', 
                            popularity=popularity_data, 
                            polarization=polarization_data)
+
+# === Task 4: Prediction Route ===
+@app.route('/predict', methods=['GET', 'POST'])
+def predict():
+    """
+    处理电影评分预测请求。
+    GET: 显示空表单。
+    POST: 接收表单数据，调用 predict_algo 计算，返回结果。
+    """
+    prediction_result = None
+    
+    if request.method == 'POST':
+        # 调用 predict.py 中的逻辑
+        prediction_result = predict_algo.get_prediction(db.session, request.form)
+
+    return render_template('predict.html', prediction=prediction_result)
 
 # === Task 3: Audience Affinity (Chord Diagram) ===
 @app.route('/task3')
