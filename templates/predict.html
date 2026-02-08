@@ -16,15 +16,20 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a class="nav-link" href="/">Search Catalogue</a>
+                        <a class="nav-link active" href="/">Search Catalogue</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-warning" href="/reports">
+                        <a class="nav-link text-warning" href="/task2">
                             <i class="bi bi-graph-up"></i> Analytics Reports
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-info active" href="/predict">
+                        <a class="nav-link text-info" href="/task3">
+                            <i class="bi bi-share"></i> Audience Affinity
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-info" href="/predict">
                             <i class="bi bi-magic"></i> Predict Ratings
                         </a>
                     </li>
@@ -46,30 +51,59 @@
                         <i class="bi bi-magic"></i> Prediction Parameters
                     </div>
                     <div class="card-body p-4">
-                        <form method="POST">
+                        <form method="POST" autocomplete="on">
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold">Primary Genres</label>
-                                    <input type="text" name="genre" class="form-control" placeholder="e.g. Action, Sci-Fi" required>
+                                    <input type="text"
+                                           name="genre"
+                                           class="form-control"
+                                           placeholder="e.g. Action, Sci-Fi"
+                                           value="{{ form_data.genre|default('') }}"
+                                           required>
                                 </div>
+
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold">Director</label>
-                                    <input type="text" name="director" class="form-control" placeholder="e.g. Christopher Nolan">
+                                    <input type="text"
+                                           name="director"
+                                           class="form-control"
+                                           placeholder="e.g. Christopher Nolan"
+                                           value="{{ form_data.director|default('') }}">
                                 </div>
+
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold">Main Actors (comma separated)</label>
-                                    <input type="text" name="actors" class="form-control" placeholder="e.g. Leonardo DiCaprio, Tom Hardy">
+                                    <input type="text"
+                                           name="actors"
+                                           class="form-control"
+                                           placeholder="e.g. Leonardo DiCaprio, Tom Hardy"
+                                           value="{{ form_data.actors|default('') }}">
                                 </div>
+
                                 <div class="col-md-3">
                                     <label class="form-label fw-bold">Runtime (mins)</label>
-                                    <input type="number" name="runtime" class="form-control" placeholder="e.g. 148">
+                                    <input type="number"
+                                           name="runtime"
+                                           class="form-control"
+                                           placeholder="e.g. 148"
+                                           value="{{ form_data.runtime|default('') }}"
+                                           min="0">
                                 </div>
+
                                 <div class="col-md-3">
                                     <label class="form-label fw-bold">Key Tags</label>
-                                    <input type="text" name="tags" class="form-control" placeholder="e.g. Disney, feminism, Oscar">
+                                    <input type="text"
+                                           name="tags"
+                                           class="form-control"
+                                           placeholder="e.g. Disney, feminism, Oscar"
+                                           value="{{ form_data.tags|default('') }}">
                                 </div>
+
                                 <div class="col-12 mt-4">
-                                    <button type="submit" class="btn btn-success w-100 py-2 fw-bold">Generate Prediction</button>
+                                    <button type="submit" class="btn btn-success w-100 py-2 fw-bold">
+                                        Generate Prediction
+                                    </button>
                                 </div>
                             </div>
                         </form>
@@ -124,7 +158,7 @@
                                             <td class="fw-bold">{{ movie.title }}</td>
                                             <td>
                                                 <div class="progress" style="height: 6px; width: 100px;">
-                                                    <div class="progress-bar bg-info" role="progressbar" 
+                                                    <div class="progress-bar bg-info" role="progressbar"
                                                          style="width: {{ (movie.similarity / 15) * 100 }}%"></div>
                                                 </div>
                                                 <small class="text-muted">{{ movie.similarity|int }} pts</small>
@@ -144,7 +178,7 @@
             </div>
         </div>
     </div>
-    
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

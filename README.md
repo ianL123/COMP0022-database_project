@@ -58,20 +58,7 @@ docker compose down -v
 ```
 
 # Getting Started
-### 0. 准备数据集
-下载文件夹
-https://files.grouplens.org/datasets/movielens/ml-latest.zip
-
-解压缩以后删除无用数据, 两个genome文件
-```bash
-rm ml-latest/genome*
-```
-
-运行预计算脚本
-```bash
-cd scripts
-python preprocess.py
-```
+*现在所以数据都可以在git上同步*
 
 ### 1. 重新启动容器
 
@@ -90,6 +77,11 @@ http://localhost:5001
 
 **预期结果**：
 一个可以搜索电影均分的页面
+
+输入以下命令关闭Docker镜像：
+```bash
+docker compose down -v
+```
 
 # 网页风格
 
