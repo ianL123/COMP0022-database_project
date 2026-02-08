@@ -1,5 +1,4 @@
 *.DS_Store*
 ml-latest-unused/*
-ml-latest/*
-ml-latest-small/*
+scripts/*
 imdb-dataset/*
