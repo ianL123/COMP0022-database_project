@@ -90,7 +90,7 @@ def index():
 
     return render_template('index.html', results=results, alerts=alerts, inputs=request.form)
 # === Task 2: Analytics Reports Route ===
-@app.route('/reports')
+@app.route('/task2')
 def reports():
     """
     Displays the analysis reports for Popularity and Polarization.
@@ -100,7 +100,7 @@ def reports():
     popularity_data = analytics.get_genre_popularity(db.session)
     polarization_data = analytics.get_genre_polarization(db.session)
     
-    return render_template('reports.html', 
+    return render_template('task2.html', 
                            popularity=popularity_data, 
                            polarization=polarization_data)
 
