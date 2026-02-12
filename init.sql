@@ -153,6 +153,8 @@ CREATE INDEX idx_movie_title ON movie_titles(title);
 -- Speed up the "Top Rated" sorting on the home page
 CREATE INDEX idx_avg_rating ON average_ratings(avg_rating);
 
+CREATE INDEX idx_others_movieid ON others(movieId);
+
 CREATE INDEX idx_director_name ON movie_directors(director);
 CREATE INDEX idx_actor_name ON movie_cast(actor);
 CREATE INDEX idx_region_code ON movie_regions(region);
@@ -162,5 +164,10 @@ CREATE TABLE IF NOT EXISTS heatmap_cache (
   payload JSON NOT NULL,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+CREATE INDEX idx_pr_user ON personality_ratings(userId);
+CREATE INDEX idx_pr_movie ON personality_ratings(movieId);
+CREATE INDEX idx_mg_movie ON movie_genres(movieId);
+CREATE INDEX idx_pd_user ON personality_data(userId);
 
 INSERT INTO init_run_log(stage) VALUES ('finished');
