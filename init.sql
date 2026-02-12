@@ -245,5 +245,10 @@ SET
 CREATE INDEX idx_mg_genre ON movie_genres(genre);
 CREATE INDEX idx_mg_movie ON movie_genres(movieId);
 
+CREATE TABLE IF NOT EXISTS heatmap_cache (
+  cache_key VARCHAR(64) PRIMARY KEY,
+  payload JSON NOT NULL,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
 
 INSERT INTO init_run_log(stage) VALUES ('finished');

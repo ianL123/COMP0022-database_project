@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request , jsonify
+from flask import Flask, render_template, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
 import analytics
@@ -151,101 +151,26 @@ def task5_heatmap():
 
 @app.route('/api/task5_heatmap')
 def api_task5_heatmap():
-    top_n = 15  # 你可以调大/调小
+    ensure_heatmap_cache()
+    data = analytics.load_heatmap_cache(db.session, HEATMAP_CACHE_KEY)
+    return jsonify(data)
 
-    sql = text(f"""
-    WITH top_genres AS (
-      SELECT mg.genre AS genre, COUNT(*) AS cnt
-      FROM personality_ratings pr
-      JOIN movie_genres mg ON mg.movieId = pr.movieId
-      GROUP BY mg.genre
-      ORDER BY cnt DESC
-      LIMIT {top_n}
-    ),
-    base AS (
-      SELECT
-        mg.genre AS genre,
-        pr.rating AS rating,
-        pd.openness AS openness,
-        pd.agreeableness AS agreeableness,
-        pd.emotional_stability AS emotional_stability,
-        pd.conscientiousness AS conscientiousness,
-        pd.extraversion AS extraversion
-      FROM personality_ratings pr
-      JOIN personality_data pd ON pd.userId = pr.userId
-      JOIN movie_genres mg ON mg.movieId = pr.movieId
-      JOIN top_genres tg ON tg.genre = mg.genre
-      WHERE pr.rating IS NOT NULL
-    ),
-    longform AS (
-      SELECT genre, rating, 'openness' AS trait, openness AS x FROM base WHERE openness IS NOT NULL
-      UNION ALL
-      SELECT genre, rating, 'agreeableness' AS trait, agreeableness AS x FROM base WHERE agreeableness IS NOT NULL
-      UNION ALL
-      SELECT genre, rating, 'emotional_stability' AS trait, emotional_stability AS x FROM base WHERE emotional_stability IS NOT NULL
-      UNION ALL
-      SELECT genre, rating, 'conscientiousness' AS trait, conscientiousness AS x FROM base WHERE conscientiousness IS NOT NULL
-      UNION ALL
-      SELECT genre, rating, 'extraversion' AS trait, extraversion AS x FROM base WHERE extraversion IS NOT NULL
-    )
-    SELECT
-      genre,
-      trait,
-      COUNT(*) AS n,
-      -- Pearson corr = (n*sum(xy)-sumx*sumy)/sqrt((n*sum(x^2)-sumx^2)*(n*sum(y^2)-sumy^2))
-      CASE
-        WHEN
-          (COUNT(*) * SUM(x*x) - POW(SUM(x), 2)) = 0
-          OR (COUNT(*) * SUM(rating*rating) - POW(SUM(rating), 2)) = 0
-        THEN NULL
-        ELSE
-          (COUNT(*) * SUM(x*rating) - SUM(x)*SUM(rating))
-          / SQRT(
-              (COUNT(*) * SUM(x*x) - POW(SUM(x), 2))
-              * (COUNT(*) * SUM(rating*rating) - POW(SUM(rating), 2))
-            )
-      END AS corr
-    FROM longform
-    GROUP BY genre, trait
-    ORDER BY trait, genre;
-    """)
+HEATMAP_CACHE_KEY = "task5_top15"
+_heatmap_ready = False
 
-    rows = db.session.execute(sql).mappings().all()
+def ensure_heatmap_cache():
+    global _heatmap_ready
+    if _heatmap_ready:
+        return
 
-    traits = ["openness", "agreeableness", "emotional_stability", "conscientiousness", "extraversion"]
+    cached = analytics.load_heatmap_cache(db.session, HEATMAP_CACHE_KEY)
+    if cached is not None:
+        _heatmap_ready = True
+        return
 
-    # genres 顺序：按 top_genres 的 cnt 降序再取一次（确保 x 轴稳定）
-    genres_sql = text(f"""
-      SELECT mg.genre AS genre, COUNT(*) AS cnt
-      FROM personality_ratings pr
-      JOIN movie_genres mg ON mg.movieId = pr.movieId
-      GROUP BY mg.genre
-      ORDER BY cnt DESC
-      LIMIT {top_n}
-    """)
-    genres = [r["genre"] for r in db.session.execute(genres_sql).mappings().all()]
-
-    # 初始化矩阵
-    z = [[None for _ in genres] for _ in traits]
-    nmat = [[0 for _ in genres] for _ in traits]
-
-    trait_index = {t: i for i, t in enumerate(traits)}
-    genre_index = {g: j for j, g in enumerate(genres)}
-
-    for r in rows:
-        ti = trait_index.get(r["trait"])
-        gj = genre_index.get(r["genre"])
-        if ti is None or gj is None:
-            continue
-        z[ti][gj] = None if r["corr"] is None else float(r["corr"])
-        nmat[ti][gj] = int(r["n"])
-
-    return jsonify({
-        "traits": traits,
-        "genres": genres,
-        "z": z,
-        "n": nmat
-    })
+    payload = analytics.build_personality_genre_heatmap(db.session, top_n=15)
+    analytics.save_heatmap_cache(db.session, HEATMAP_CACHE_KEY, payload)
+    _heatmap_ready = True
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
