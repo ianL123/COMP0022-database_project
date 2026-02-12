@@ -90,6 +90,10 @@
                             </div>
                         </div>
                     </div>
+                    <!-- May be different from other tasks, for this requirement -->
+                    <!-- the backend will process the data for heatmap. So this -->
+                    <!-- reminder will be seen when sql is ready but data for this -->
+                    <!-- task is not ready. -->
 
                     <div id="heatmap"></div>
                 </div>
@@ -103,27 +107,27 @@
     <script>
         async function plotHeatmap() {
             const loadingIndicator = document.getElementById("loading-indicator");
-
+    
             loadingIndicator.classList.remove("d-none");
-
+    
             try {
                 const res = await fetch("/api/task5_heatmap", { cache: "no-store" });
                 if (!res.ok) {
                     throw new Error("API error: " + res.status);
                 }
-
+    
                 const data = await res.json();
-
+    
                 const traits = data.traits || [];
                 const genres = (data.genres || []).map(g => String(g).trim());
                 const z = data.z || [];
                 const n = data.n || [];
-
+    
                 if (!traits.length || !genres.length || !z.length) {
                     loadingIndicator.classList.add("d-none");
                     return;
                 }
-
+    
                 // Auto-scale color range around 0 to make differences more visible
                 let minV = Infinity;
                 let maxV = -Infinity;
@@ -138,7 +142,7 @@
                     }
                 }
                 const absMax = Math.max(Math.abs(minV), Math.abs(maxV)) || 1e-6;
-
+    
                 const hoverText = traits.map((t, i) =>
                     genres.map((g, j) => {
                         const corr = z?.[i]?.[j];
@@ -147,7 +151,7 @@
                         return `Trait: ${t}<br>Genre: ${g}<br>corr: ${c}<br>n: ${nn}`;
                     })
                 );
-
+    
                 const trace = {
                     type: "heatmap",
                     x: genres,
@@ -161,28 +165,28 @@
                     colorscale: "RdBu",
                     showscale: true
                 };
-
+    
                 const layout = {
                     margin: { l: 140, r: 30, t: 10, b: 160 },
                     xaxis: { tickangle: -45 },
                     yaxis: { automargin: true }
                 };
-
+    
                 await Plotly.newPlot("heatmap", [trace], layout, { responsive: true });
-
+    
                 loadingIndicator.classList.add("d-none");
             } catch (e) {
                 console.error(e);
                 loadingIndicator.classList.add("d-none");
             }
-            }
         }
-
+    
         document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("btn-refresh").addEventListener("click", plotHeatmap);
             plotHeatmap();
         });
     </script>
+
 
 </body>
 </html>
