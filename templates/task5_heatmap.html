@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <title>Task 5 - Personality × Genre Heatmap</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div class="container" style="max-width: 1200px; margin: 24px auto; padding: 0 12px;">
+    <h2>Personality Traits and Viewing Preferences</h2>
+    <p style="color:#666;">
+      Cell values represent the Pearson correlation coefficient: within each genre, the correlation between users’ ratings and their personality trait scores.
+      (A value closer to 1 indicates a stronger positive correlation; closer to –1 indicates a stronger negative correlation; close to 0 indicates little to no correlation.)
+    </p>
+
+    <div id="heatmap" style="width:100%; height: 720px;"></div>
+  </div>
+
+  <script>
+    async function renderHeatmap() {
+      const res = await fetch("/api/task5_heatmap");
+      const data = await res.json();
+
+      const traits = data.traits;
+      const genres = data.genres;
+      const z = data.z;
+      const n = data.n;
+
+      const hoverText = traits.map((t, i) =>
+        genres.map((g, j) => {
+          const corr = z[i][j];
+          const nn = n[i][j];
+          const c = (corr === null || corr === undefined) ? "NULL" : corr.toFixed(4);
+          return `Trait: ${t}<br>Genre: ${g}<br>corr: ${c}<br>n: ${nn}`;
+        })
+      );
+
+      const trace = {
+        type: "heatmap",
+        x: genres,
+        y: traits,
+        z: z,
+        text: hoverText,
+        hoverinfo: "text",
+        zmin: -1,
+        zmax: 1
+      };
+
+      const layout = {
+        margin: {l: 140, r: 30, t: 20, b: 160},
+        xaxis: {tickangle: -45},
+        yaxis: {automargin: true}
+      };
+
+      Plotly.newPlot("heatmap", [trace], layout, {responsive: true});
+    }
+
+    renderHeatmap();
+  </script>
+</body>
+</html>

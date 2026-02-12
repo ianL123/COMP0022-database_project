@@ -92,7 +92,7 @@ INSERT INTO init_run_log(stage) VALUES ('tables_created');
 
 -- 3. Data Loading
 -- Note: Using \r\n for line endings is safer for files created on Windows/Excel
-LOAD DATA INFILE '/var/lib/mysql-files/average_ratings.csv' 
+LOAD DATA INFILE '/var/lib/mysql-files/ml-latest/average_ratings.csv' 
 IGNORE INTO TABLE average_ratings
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
 LINES TERMINATED BY '\n' IGNORE 1 ROWS;
@@ -103,22 +103,22 @@ FIELDS TERMINATED BY ',' ENCLOSED BY '"'
 LINES TERMINATED BY '\n' IGNORE 1 ROWS
 (movieId, title);
 
-LOAD DATA INFILE '/var/lib/mysql-files/links.csv' 
+LOAD DATA INFILE '/var/lib/mysql-files/ml-latest/links.csv' 
 IGNORE INTO TABLE links 
 FIELDS TERMINATED BY ',' 
 LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
-LOAD DATA INFILE '/var/lib/mysql-files/tags.csv' 
+LOAD DATA INFILE '/var/lib/mysql-files/ml-latest/tags.csv' 
 IGNORE INTO TABLE tags 
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
 LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
-LOAD DATA INFILE '/var/lib/mysql-files/movie_genres.csv' 
+LOAD DATA INFILE '/var/lib/mysql-files/ml-latest/movie_genres.csv' 
 IGNORE INTO TABLE movie_genres 
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
 LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
-LOAD DATA INFILE '/var/lib/mysql-files/genre_stats_summary.csv' 
+LOAD DATA INFILE '/var/lib/mysql-files/ml-latest/genre_stats_summary.csv' 
 IGNORE INTO TABLE genre_stats_summary
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
 LINES TERMINATED BY '\n' IGNORE 1 ROWS;
@@ -133,7 +133,7 @@ IGNORE INTO TABLE movie_cast
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
 LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
-LOAD DATA INFILE '/var/lib/mysql-files/movie_regions.csv' 
+LOAD DATA INFILE '/var/lib/mysql-files/ml-latest/movie_regions.csv' 
 IGNORE INTO TABLE movie_regions
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
 LINES TERMINATED BY '\n' IGNORE 1 ROWS;
