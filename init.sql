@@ -246,9 +246,4 @@ CREATE TABLE IF NOT EXISTS heatmap_cache (
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_pr_user ON personality_ratings(userId);
-CREATE INDEX idx_pr_movie ON personality_ratings(movieId);
-CREATE INDEX idx_mg_movie ON movie_genres(movieId);
-CREATE INDEX idx_pd_user ON personality_data(userId);
-
 INSERT INTO init_run_log(stage) VALUES ('finished');
