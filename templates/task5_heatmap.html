@@ -69,7 +69,6 @@
                         Cell values represent the Pearson correlation coefficient: within each genre, the correlation between users’ ratings and their personality trait scores.
                         (A value closer to 1 indicates a stronger positive correlation; closer to –1 indicates a stronger negative correlation; close to 0 indicates little to no correlation.)
                     </p>
-                    <p id="status" class="small text-muted mb-0">Loading...</p>
                 </div>
             </div>
 
@@ -82,11 +81,17 @@
                         </button>
                     </div>
 
-                    <div id="heatmap"></div>
-
-                    <div id="err" class="alert alert-danger mt-3 d-none" role="alert">
-                        Failed to render heatmap.
+                    <div id="loading-indicator" class="alert alert-info mt-3 text-center" role="status">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <div class="spinner-border spinner-border-sm me-2 text-primary" role="status"></div>
+                            <div>
+                                <div><strong>Loading heatmap data</strong></div>
+                                <div class="small text-muted">May take long time</div>
+                            </div>
+                        </div>
                     </div>
+
+                    <div id="heatmap"></div>
                 </div>
             </div>
         </div>
@@ -97,11 +102,9 @@
 
     <script>
         async function plotHeatmap() {
-            const statusEl = document.getElementById("status");
-            const errEl = document.getElementById("err");
+            const loadingIndicator = document.getElementById("loading-indicator");
 
-            errEl.classList.add("d-none");
-            statusEl.textContent = "Loading...";
+            loadingIndicator.classList.remove("d-none");
 
             try {
                 const res = await fetch("/api/task5_heatmap", { cache: "no-store" });
@@ -117,7 +120,7 @@
                 const n = data.n || [];
 
                 if (!traits.length || !genres.length || !z.length) {
-                    statusEl.textContent = "No data returned.";
+                    loadingIndicator.classList.add("d-none");
                     return;
                 }
 
@@ -167,11 +170,11 @@
 
                 await Plotly.newPlot("heatmap", [trace], layout, { responsive: true });
 
-                statusEl.textContent = `Rendered. Scale: [${(-absMax).toFixed(3)}, ${absMax.toFixed(3)}]`;
+                loadingIndicator.classList.add("d-none");
             } catch (e) {
                 console.error(e);
-                statusEl.textContent = "Failed.";
-                errEl.classList.remove("d-none");
+                loadingIndicator.classList.add("d-none");
+            }
             }
         }
 
