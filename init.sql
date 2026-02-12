@@ -97,58 +97,58 @@ INSERT INTO init_run_log(stage) VALUES ('tables_created');
 
 -- 3. Data Loading
 -- Note: Using \r\n for line endings is safer for files created on Windows/Excel
-LOAD DATA INFILE '/var/lib/mysql-files/average_ratings.csv' 
+LOAD DATA INFILE '/var/lib/mysql-files/ml-latest/average_ratings.csv' 
 IGNORE INTO TABLE average_ratings
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
 LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
-LOAD DATA INFILE '/var/lib/mysql-files/movies.csv' 
+LOAD DATA INFILE '/var/lib/mysql-files/ml-latest/movies.csv' 
 IGNORE INTO TABLE movies 
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
 LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
-LOAD DATA INFILE '/var/lib/mysql-files/links.csv' 
+LOAD DATA INFILE '/var/lib/mysql-files/ml-latest/links.csv' 
 IGNORE INTO TABLE links 
 FIELDS TERMINATED BY ',' 
 LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
-LOAD DATA INFILE '/var/lib/mysql-files/tags.csv' 
+LOAD DATA INFILE '/var/lib/mysql-files/ml-latest/tags.csv' 
 IGNORE INTO TABLE tags 
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
 LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
-LOAD DATA INFILE '/var/lib/mysql-files/movie_genres.csv' 
+LOAD DATA INFILE '/var/lib/mysql-files/ml-latest/movie_genres.csv' 
 IGNORE INTO TABLE movie_genres 
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
 LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
-LOAD DATA INFILE '/var/lib/mysql-files/genre_stats_summary.csv' 
+LOAD DATA INFILE '/var/lib/mysql-files/ml-latest/genre_stats_summary.csv' 
 IGNORE INTO TABLE genre_stats_summary
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
 LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
-LOAD DATA INFILE '/var/lib/mysql-files/others.csv' 
+LOAD DATA INFILE '/var/lib/mysql-files/ml-latest/others.csv' 
 IGNORE INTO TABLE others
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
 LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
 -- [新增] 加载新生成的规范化数据
-LOAD DATA INFILE '/var/lib/mysql-files/movie_directors.csv' 
+LOAD DATA INFILE '/var/lib/mysql-files/ml-latest/movie_directors.csv' 
 IGNORE INTO TABLE movie_directors
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
 LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
-LOAD DATA INFILE '/var/lib/mysql-files/movie_cast.csv' 
+LOAD DATA INFILE '/var/lib/mysql-files/ml-latest/movie_cast.csv' 
 IGNORE INTO TABLE movie_cast
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
 LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
-LOAD DATA INFILE '/var/lib/mysql-files/movie_regions.csv' 
+LOAD DATA INFILE '/var/lib/mysql-files/ml-latest/movie_regions.csv' 
 IGNORE INTO TABLE movie_regions
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
 LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
-LOAD DATA INFILE '/var/lib/mysql-files/genre_affinity.csv' 
+LOAD DATA INFILE '/var/lib/mysql-files/ml-latest/genre_affinity.csv' 
 INTO TABLE genre_affinity 
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
 LINES TERMINATED BY '\n' IGNORE 1 ROWS;
@@ -164,5 +164,86 @@ CREATE INDEX idx_others_movieid ON others(movieId);
 CREATE INDEX idx_director_name ON movie_directors(director);
 CREATE INDEX idx_actor_name ON movie_cast(actor);
 CREATE INDEX idx_region_code ON movie_regions(region);
+
+-- =========================
+-- Personality dataset tables
+-- =========================
+
+DROP TABLE IF EXISTS personality_data;
+CREATE TABLE personality_data (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  userId VARCHAR(64) NOT NULL,
+  openness DECIMAL(5,2),
+  agreeableness DECIMAL(5,2),
+  emotional_stability DECIMAL(5,2),
+  conscientiousness DECIMAL(5,2),
+  extraversion DECIMAL(5,2),
+  assigned_metric VARCHAR(50),
+  assigned_condition VARCHAR(50),
+  is_personalized INT,
+  enjoy_watching INT,
+  INDEX idx_pd_user (userId)
+) CHARACTER SET utf8mb4;
+
+
+DROP TABLE IF EXISTS personality_ratings;
+CREATE TABLE personality_ratings (
+  userId VARCHAR(64) NOT NULL,
+  movieId INT NOT NULL,
+  rating DECIMAL(3,1) NOT NULL,
+  tstamp DATETIME,
+  INDEX idx_pr_movie (movieId),
+  INDEX idx_pr_user (userId)
+) CHARACTER SET utf8mb4;
+
+INSERT INTO init_run_log(stage) VALUES ('tables_created_personality');
+
+-- Load personality-data.csv (ignore trailing columns)
+LOAD DATA INFILE '/var/lib/mysql-files/personality-isf2018/personality-data.csv'
+INTO TABLE personality_data
+FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"' 
+LINES TERMINATED BY '\n'
+IGNORE 1 ROWS
+(
+  @userId,
+  @openness,
+  @agreeableness,
+  @emotional_stability,
+  @conscientiousness,
+  @extraversion,
+  @assigned_metric,
+  @assigned_condition,
+  -- ignore the rest columns until last two (we will just swallow all remaining)
+  @c1,@c2,@c3,@c4,@c5,@c6,@c7,@c8,@c9,@c10,@c11,@c12,@c13,@c14,@c15,@c16,@c17,@c18,@c19,@c20,@c21,@c22,@c23,@c24,
+  @is_personalized,
+  @enjoy_watching
+)
+SET
+  userId = TRIM(@userId),
+  openness = NULLIF(TRIM(@openness),''),
+  agreeableness = NULLIF(TRIM(@agreeableness),''),
+  emotional_stability = NULLIF(TRIM(@emotional_stability),''),
+  conscientiousness = NULLIF(TRIM(@conscientiousness),''),
+  extraversion = NULLIF(TRIM(@extraversion),''),
+  assigned_metric = NULLIF(TRIM(@assigned_metric),''),
+  assigned_condition = NULLIF(TRIM(@assigned_condition),''),
+  is_personalized = NULLIF(TRIM(@is_personalized),''),
+  enjoy_watching = NULLIF(TRIM(@enjoy_watching),'');
+
+LOAD DATA INFILE '/var/lib/mysql-files/personality-isf2018/ratings.csv'
+INTO TABLE personality_ratings
+FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"'
+LINES TERMINATED BY '\n'
+IGNORE 1 ROWS
+(@userId, @movieId, @rating, @tstamp)
+SET
+  userId = TRIM(@userId),
+  movieId = NULLIF(TRIM(@movieId),''),
+  rating = NULLIF(TRIM(@rating),''),
+  tstamp = NULLIF(TRIM(@tstamp),'');
+
+CREATE INDEX idx_mg_genre ON movie_genres(genre);
+CREATE INDEX idx_mg_movie ON movie_genres(movieId);
+
 
 INSERT INTO init_run_log(stage) VALUES ('finished');

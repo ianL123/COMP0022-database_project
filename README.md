@@ -74,7 +74,7 @@ SELECT * from init_run_log;
 等到最后一行变成finished即可启动网页。
 
 
-4. **退出** 操作完成后，输入以下命令退出 MySQL 终端：
+3. **退出** 操作完成后，输入以下命令退出 MySQL 终端：
 ```sql
 exit
 ```
