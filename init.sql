@@ -157,5 +157,10 @@ CREATE INDEX idx_director_name ON movie_directors(director);
 CREATE INDEX idx_actor_name ON movie_cast(actor);
 CREATE INDEX idx_region_code ON movie_regions(region);
 CREATE INDEX idx_runtimes ON movie_runtimes(runtimeMinutes);
+CREATE TABLE IF NOT EXISTS heatmap_cache (
+  cache_key VARCHAR(64) PRIMARY KEY,
+  payload JSON NOT NULL,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
 
 INSERT INTO init_run_log(stage) VALUES ('finished');
