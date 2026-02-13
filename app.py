@@ -306,14 +306,23 @@ def logout():
 
 @app.route('/create_folder', methods=['POST'])
 def create_folder():
-    if 'user_id' not in session: return redirect(url_for('login'))
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
     
-    name = request.form.get('folder_name', 'My New List').strip()
+    name = request.form.get('folder_name', '').strip()
     user_id = session['user_id']
     
-    sql = text("INSERT INTO user_folders (user_id, folder_name) VALUES (:u, :n)")
-    db.session.execute(sql, {'u': user_id, 'n': name})
-    db.session.commit()
+    if name:
+        try:
+            sql = text("INSERT INTO user_folders (user_id, folder_name) VALUES (:u, :n)")
+            db.session.execute(sql, {'u': user_id, 'n': name})
+            db.session.commit()
+            flash(f'List "{name}" created successfully!', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash('Error creating list. Name might be too long.', 'danger')
+    
+    # This sends the user back to the search page with their inputs preserved
     return redirect(request.referrer or url_for('index'))
 
 @app.route('/add_to_folder', methods=['POST'])
