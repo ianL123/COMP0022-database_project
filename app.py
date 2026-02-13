@@ -76,7 +76,7 @@ def index():
             rt.runtimeMinutes,
             COALESCE(reg.regions, '') AS regions
         FROM movie_titles t
-        INNER JOIN average_ratings r
+        LEFT JOIN average_ratings r
             ON t.movieId = r.movieId
         LEFT JOIN movie_runtimes rt
             ON t.movieId = rt.movieId
