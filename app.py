@@ -1,13 +1,19 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
+import dotenv
+import os
 import analytics
 import predict as predict_algo
 
+dotenv.load_dotenv()
+
 app = Flask(__name__)
 
-# 配置数据库
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:password123@db:3306/my_project_db'
+app.secret_key = os.environ.get('FLASK_SECRET_KEY')
+
+# Configure database
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -16,19 +22,26 @@ db = SQLAlchemy(app)
 def index():
     results = []
     alerts = []
+    
+    # 1. Check if user is logged in
+    # This determines if the template shows the "+" button and "Sign In" button
+    is_logged_in = 'user_id' in session 
 
-    # Get Core inputs
-    f_title = request.form.get('title', '').strip()
-    f_genre = request.form.get('genre', '').strip()
-    f_tag = request.form.get('tag', '').strip()
-    f_year_start = request.form.get('year_start', '').strip()
-    f_year_end = request.form.get('year_end', '').strip()
+    # 2. Use request.values to handle both GET (initial load) and POST (search button)
+    inputs = request.values if request.method == 'POST' else {}
 
-    # Get Advanced inputs
-    f_director = request.form.get('director', '').strip()
-    f_actor = request.form.get('actor', '').strip()
-    f_runtime = request.form.get('runtime', '').strip()
-    f_region = request.form.get('region', '').strip()
+    # Core inputs
+    f_title = inputs.get('title', '').strip()
+    f_genre = inputs.get('genre', '').strip()
+    f_tag = inputs.get('tag', '').strip()
+    f_year_start = inputs.get('year_start', '').strip()
+    f_year_end = inputs.get('year_end', '').strip()
+
+    # Advanced inputs
+    f_director = inputs.get('director', '').strip()
+    f_actor = inputs.get('actor', '').strip()
+    f_runtime = inputs.get('runtime', '').strip()
+    f_region = inputs.get('region', '').strip()
 
     # base_sql = """
     #     SELECT 
@@ -157,16 +170,21 @@ def index():
 
     try:
         results = db.session.execute(text(sql), params).fetchall()
-        # if results and any(row.directors is None for row in results):
-        #     alerts.append("Some movies are missing extended metadata.")
-        if results and any(row.directors == '' and row.topCast == '' and (row.runtimeMinutes is None) and row.regions == '' for row in results):
-            alerts.append("Some movies are missing extended metadata.")
-
+        # Logic check: if search returned results but metadata (directors) is missing
+        if results and any(row.directors is None for row in results):
+            alerts.append("Some movies are missing extended metadata from the 'others' database.")
     except Exception as e:
         print(f"Database Error: {e}")
-        alerts.append("Query error - Check database connection.")
+        alerts.append("Search unavailable - please check your database connection.")
 
-    return render_template('index.html', results=results, alerts=alerts, inputs=request.form)
+    # 3. Pass is_logged_in to the template
+    return render_template(
+        'index.html', 
+        results=results, 
+        alerts=alerts, 
+        inputs=inputs, 
+        is_logged_in=is_logged_in
+    )
 
 # === Task 2: Analytics Reports Route ===
 @app.route('/task2')
@@ -180,6 +198,17 @@ def task2():
     return render_template('task2.html', 
                            popularity=popularity_data, 
                            polarization=polarization_data)
+
+# === Task 3: Audience Affinity (Chord Diagram) ===
+@app.route('/task3')
+def task3():
+    """
+    Calculates genre correlation based on high user ratings.
+    """
+    # This calls the algorithm that creates the source/target matrix
+    chord_data = analytics.get_genre_chord_data(db.session)
+    
+    return render_template('task3.html', chord_data=chord_data)
 
 # === Task 4: Prediction Route ===
 @app.route('/predict', methods=['GET', 'POST'])
@@ -214,18 +243,7 @@ def predict():
 
     return render_template('predict.html', prediction=prediction_result, form_data=form_data)
 
-
-# === Task 3: Audience Affinity (Chord Diagram) ===
-@app.route('/task3')
-def task3():
-    """
-    Calculates genre correlation based on high user ratings.
-    """
-    # This calls the algorithm that creates the source/target matrix
-    chord_data = analytics.get_genre_chord_data(db.session)
-    
-    return render_template('task3.html', chord_data=chord_data)
-
+# === Task 5: Personality Traits ===
 @app.route('/task5_heatmap')
 def task5_heatmap():
     return render_template('task5_heatmap.html')
@@ -252,6 +270,72 @@ def ensure_heatmap_cache():
     payload = analytics.build_personality_genre_heatmap(db.session, top_n=15)
     analytics.save_heatmap_cache(db.session, HEATMAP_CACHE_KEY, payload)
     _heatmap_ready = True
+
+# === Task 6: Curated Colletion Planner ===
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        # Query your user table
+        user_query = text("SELECT id, username, password FROM users WHERE username = :username")
+        user = db.session.execute(user_query, {'username': username}).fetchone()
+
+        # Simple verification (In a real app, use password hashing like Werkzeug)
+        if user and user.password == password:
+            session['user_id'] = user.id
+            session['username'] = user.username
+            flash('Successfully logged in!', 'success')
+            return redirect(url_for('index'))
+        else:
+            flash('Invalid username or password.', 'danger')
+            
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('index'))
+
+@app.route('/add_to_list', methods=['POST'])
+def add_to_list():
+    if 'user_id' not in session:
+        flash('You must be signed in to add movies.', 'warning')
+        return redirect(url_for('login'))
+
+    movie_id = request.form.get('movie_id')
+    user_id = session['user_id']
+
+    try:
+        sql = text("INSERT IGNORE INTO user_watchlist (user_id, movie_id) VALUES (:u, :m)")
+        db.session.execute(sql, {'u': user_id, 'm': movie_id})
+        db.session.commit()
+        flash('Movie added to your list!', 'success')
+    except Exception as e:
+        print(f"Error: {e}")
+        flash('Could not add movie.', 'danger')
+
+    return redirect(request.referrer or url_for('index'))
+
+@app.route('/delete_from_list', methods=['POST'])
+def delete_from_list():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    movie_id = request.form.get('movie_id')
+    user_id = session['user_id']
+
+    try:
+        sql = text("DELETE FROM user_watchlist WHERE user_id = :u AND movie_id = :m")
+        db.session.execute(sql, {'u': user_id, 'm': movie_id})
+        db.session.commit()
+        flash('Movie removed.', 'info')
+    except Exception as e:
+        print(f"Error: {e}")
+
+    return redirect(request.referrer or url_for('index'))
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

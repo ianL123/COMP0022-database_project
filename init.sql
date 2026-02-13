@@ -230,6 +230,7 @@ INTO TABLE personality_ratings
 FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"'
 LINES TERMINATED BY '\n'
 IGNORE 1 ROWS
+
 (@userId, @movieId, @rating, @tstamp)
 SET
     userId = TRIM(@userId),
@@ -250,5 +251,26 @@ CREATE INDEX idx_pr_user ON personality_ratings(userId);
 CREATE INDEX idx_pr_movie ON personality_ratings(movieId);
 CREATE INDEX idx_mg_movie ON movie_genres(movieId);
 CREATE INDEX idx_pd_user ON personality_data(userId);
+
+INSERT INTO init_run_log(stage) VALUES ('Task 5 finished');
+
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL
+);
+
+LOAD DATA INFILE '/var/lib/mysql-files/user-system/users.csv'
+INTO TABLE users
+FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"'
+LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+
+CREATE TABLE IF NOT EXISTS user_watchlist (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    movie_id INT NOT NULL,
+    added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_user_movie (user_id, movie_id) -- Prevents adding same movie twice
+);
 
 INSERT INTO init_run_log(stage) VALUES ('finished');

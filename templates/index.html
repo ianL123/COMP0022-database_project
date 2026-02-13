@@ -62,6 +62,24 @@
                         </a>
                     </li>
                 </ul>
+                <div class="d-flex ms-auto">
+                    {% if is_logged_in %}
+                        <div class="dropdown">
+                            <button class="btn btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-person-circle"></i> My Account
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="/mylist">My Designated List</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="/logout">Sign Out</a></li>
+                            </ul>
+                        </div>
+                    {% else %}
+                        <a href="/login" class="btn btn-warning">
+                            <i class="bi bi-box-arrow-in-right"></i> Sign In
+                        </a>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </nav>
@@ -157,7 +175,7 @@
                         <th>Genre(s)</th>
                         <th>Avg Rating (Votes)</th>
                         <th>Regions Available</th>
-                    </tr>
+                        <th>Actions</th> </tr>
                 </thead>
                 <tbody>
                     {% for row in results %}
@@ -186,6 +204,16 @@
                                 </span>
                             {% else %}
                                 <span class="text-muted small">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if is_logged_in %}
+                                <form action="{{ url_for('add_to_list') }}" method="POST" style="display:inline;">
+                                    <input type="hidden" name="movie_id" value="{{ row.movieId }}">
+                                    <button type="submit" class="btn btn-sm btn-success rounded-circle">
+                                        <i class="bi bi-plus-lg"></i>
+                                    </button>
+                                </form>
                             {% endif %}
                         </td>
                     </tr>

@@ -13,6 +13,7 @@ services:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./ml-latest:/var/lib/mysql-files/ml-latest
       - ./personality-isf2018:/var/lib/mysql-files/personality-isf2018
+      - ./user-system:/var/lib/mysql-files/user-system
 
   app:
     build: .
