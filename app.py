@@ -30,37 +30,115 @@ def index():
     f_runtime = request.form.get('runtime', '').strip()
     f_region = request.form.get('region', '').strip()
 
+    # base_sql = """
+    #     SELECT 
+    #         m.movieId,
+    #         m.title, 
+    #         m.genres,
+    #         SUBSTRING(m.title, -5, 4) AS release_year,
+    #         r.avg_rating,
+    #         r.count as vote_count,
+    #         o.directors,
+    #         o.topCast,
+    #         o.runtimeMinutes,
+    #         o.regions
+    #     FROM movies m
+    #     INNER JOIN average_ratings r ON m.movieId = r.movieId
+    #     LEFT JOIN others o ON m.movieId = o.movieId
+    # """
+
     base_sql = """
-        SELECT 
-            m.movieId,
-            m.title, 
-            m.genres,
-            SUBSTRING(m.title, -5, 4) AS release_year,
+        SELECT
+            t.movieId,
+            t.title,
+            COALESCE(g.genres, '') AS genres,
+            SUBSTRING(t.title, -5, 4) AS release_year,
             r.avg_rating,
-            r.count as vote_count,
-            o.directors,
-            o.topCast,
-            o.runtimeMinutes,
-            o.regions
-        FROM movies m
-        INNER JOIN average_ratings r ON m.movieId = r.movieId
-        LEFT JOIN others o ON m.movieId = o.movieId
+            r.count AS vote_count,
+            COALESCE(d.directors, '') AS directors,
+            COALESCE(c.topCast, '') AS topCast,
+            rt.runtimeMinutes,
+            COALESCE(reg.regions, '') AS regions
+        FROM movie_titles t
+        INNER JOIN average_ratings r
+            ON t.movieId = r.movieId
+        LEFT JOIN movie_runtimes rt
+            ON t.movieId = rt.movieId
+        LEFT JOIN (
+            SELECT movieId, GROUP_CONCAT(genre ORDER BY genre SEPARATOR '|') AS genres
+            FROM movie_genres
+            GROUP BY movieId
+        ) g ON t.movieId = g.movieId
+        LEFT JOIN (
+            SELECT movieId, GROUP_CONCAT(director ORDER BY director SEPARATOR ', ') AS directors
+            FROM movie_directors
+            GROUP BY movieId
+        ) d ON t.movieId = d.movieId
+        LEFT JOIN (
+            SELECT movieId, GROUP_CONCAT(actor ORDER BY actor SEPARATOR ', ') AS topCast
+            FROM movie_cast
+            GROUP BY movieId
+        ) c ON t.movieId = c.movieId
+        LEFT JOIN (
+            SELECT movieId, GROUP_CONCAT(region ORDER BY region SEPARATOR ', ') AS regions
+            FROM movie_regions
+            GROUP BY movieId
+        ) reg ON t.movieId = reg.movieId
     """
+
     
+    # tag_filter = ""
+    # if f_tag:
+    #     tag_filter = " AND EXISTS (SELECT 1 FROM tags t WHERE t.movieId = m.movieId AND t.tag LIKE :tag)"
     tag_filter = ""
     if f_tag:
-        tag_filter = " AND EXISTS (SELECT 1 FROM tags t WHERE t.movieId = m.movieId AND t.tag LIKE :tag)"
+        tag_filter = """
+            AND EXISTS (
+                SELECT 1 FROM tags tg
+                WHERE tg.movieId = t.movieId AND tg.tag LIKE :tag
+            )
+        """
+
+
+    # where_clause = """
+    #     WHERE m.title LIKE :title
+    #     AND m.genres LIKE :genre
+    #     AND (:year_start = '' OR SUBSTRING(m.title, -5, 4) >= :year_start)
+    #     AND (:year_end = '' OR SUBSTRING(m.title, -5, 4) <= :year_end)
+    #     AND (:director = '' OR o.directors LIKE :director)
+    #     AND (:actor = '' OR o.topCast LIKE :actor)
+    #     AND (:runtime = '' OR o.runtimeMinutes >= :runtime)
+    #     AND (:region = '' OR o.regions LIKE :region)
+    # """
 
     where_clause = """
-        WHERE m.title LIKE :title
-        AND m.genres LIKE :genre
-        AND (:year_start = '' OR SUBSTRING(m.title, -5, 4) >= :year_start)
-        AND (:year_end = '' OR SUBSTRING(m.title, -5, 4) <= :year_end)
-        AND (:director = '' OR o.directors LIKE :director)
-        AND (:actor = '' OR o.topCast LIKE :actor)
-        AND (:runtime = '' OR o.runtimeMinutes >= :runtime)
-        AND (:region = '' OR o.regions LIKE :region)
+        WHERE t.title LIKE :title
+        AND (:year_start = '' OR SUBSTRING(t.title, -5, 4) >= :year_start)
+        AND (:year_end = '' OR SUBSTRING(t.title, -5, 4) <= :year_end)
+
+        AND (:genre = '' OR EXISTS (
+            SELECT 1 FROM movie_genres mg
+            WHERE mg.movieId = t.movieId AND mg.genre LIKE :genre
+        ))
+
+        AND (:director = '' OR EXISTS (
+            SELECT 1 FROM movie_directors md
+            WHERE md.movieId = t.movieId AND md.director LIKE :director
+        ))
+
+        AND (:actor = '' OR EXISTS (
+            SELECT 1 FROM movie_cast mc
+            WHERE mc.movieId = t.movieId AND mc.actor LIKE :actor
+        ))
+
+        AND (:runtime = '' OR rt.runtimeMinutes >= :runtime)
+
+        AND (:region = '' OR EXISTS (
+            SELECT 1 FROM movie_regions mr
+            WHERE mr.movieId = t.movieId AND mr.region LIKE :region
+        ))
     """
+
 
     order_by = "ORDER BY r.count DESC"
     sql = f"{base_sql} {where_clause} {tag_filter} {order_by} LIMIT 50"
@@ -79,8 +157,11 @@ def index():
 
     try:
         results = db.session.execute(text(sql), params).fetchall()
-        if results and any(row.directors is None for row in results):
+        # if results and any(row.directors is None for row in results):
+        #     alerts.append("Some movies are missing extended metadata.")
+        if results and any(row.directors == '' and row.topCast == '' and (row.runtimeMinutes is None) and row.regions == '' for row in results):
             alerts.append("Some movies are missing extended metadata.")
+
     except Exception as e:
         print(f"Database Error: {e}")
         alerts.append("Query error - Check database connection.")
