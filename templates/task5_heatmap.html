@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8" />
+    <title>Personality-Genre Heatmap</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+
+    <style>
+        #heatmap {
+            width: 100%;
+            height: 720px;
+        }
+    </style>
+</head>
+
+<body class="bg-light">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">🎬 Movie Strategy DB</a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/">Search Catalogue</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-warning" href="/task2">
+                            <i class="bi bi-graph-up"></i> Analytics Reports
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-info" href="/task3">
+                            <i class="bi bi-share"></i> Audience Affinity
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-info" href="/predict">
+                            <i class="bi bi-magic"></i> Predict Ratings
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-info" href="/task5_heatmap">
+                            <i class="bi bi-grid-3x3-gap"></i> Personality-Genre Heatmap
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid px-4">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card shadow-sm p-4 mb-4">
+                    <h5 class="text-primary">
+                        <i class="bi bi-info-circle"></i> Insight Guide
+                    </h5>
+                    <hr>
+                    <p class="small text-muted">
+                        Cell values represent the Pearson correlation coefficient: within each genre, the correlation between users’ ratings and their personality trait scores.
+                        (A value closer to 1 indicates a stronger positive correlation; closer to –1 indicates a stronger negative correlation; close to 0 indicates little to no correlation.)
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-9">
+                <div class="card shadow-sm p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h5 class="text-dark mb-0">Personality × Genre Heatmap</h5>
+                        <button id="btn-refresh" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                        </button>
+                    </div>
+
+                    <div id="loading-indicator" class="alert alert-info mt-3 text-center" role="status">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <div class="spinner-border spinner-border-sm me-2 text-primary" role="status"></div>
+                            <div>
+                                <div><strong>Loading heatmap data</strong></div>
+                                <div class="small text-muted">May take long time</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- May be different from other tasks, for this requirement -->
+                    <!-- the backend will process the data for heatmap. So this -->
+                    <!-- reminder will be seen when sql is ready but data for this -->
+                    <!-- task is not ready. -->
+
+                    <div id="heatmap"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        async function plotHeatmap() {
+            const loadingIndicator = document.getElementById("loading-indicator");
+    
+            loadingIndicator.classList.remove("d-none");
+    
+            try {
+                const res = await fetch("/api/task5_heatmap", { cache: "no-store" });
+                if (!res.ok) {
+                    throw new Error("API error: " + res.status);
+                }
+    
+                const data = await res.json();
+    
+                const traits = data.traits || [];
+                const genres = (data.genres || []).map(g => String(g).trim());
+                const z = data.z || [];
+                const n = data.n || [];
+    
+                if (!traits.length || !genres.length || !z.length) {
+                    loadingIndicator.classList.add("d-none");
+                    return;
+                }
+    
+                // Auto-scale color range around 0 to make differences more visible
+                let minV = Infinity;
+                let maxV = -Infinity;
+                for (let i = 0; i < z.length; i++) {
+                    for (let j = 0; j < z[i].length; j++) {
+                        const v = z[i][j];
+                        if (v === null || v === undefined) continue;
+                        const num = Number(v);
+                        if (!Number.isFinite(num)) continue;
+                        if (num < minV) minV = num;
+                        if (num > maxV) maxV = num;
+                    }
+                }
+                const absMax = Math.max(Math.abs(minV), Math.abs(maxV)) || 1e-6;
+    
+                const hoverText = traits.map((t, i) =>
+                    genres.map((g, j) => {
+                        const corr = z?.[i]?.[j];
+                        const nn = n?.[i]?.[j] ?? 0;
+                        const c = (corr === null || corr === undefined) ? "NULL" : Number(corr).toFixed(4);
+                        return `Trait: ${t}<br>Genre: ${g}<br>corr: ${c}<br>n: ${nn}`;
+                    })
+                );
+    
+                const trace = {
+                    type: "heatmap",
+                    x: genres,
+                    y: traits,
+                    z: z,
+                    text: hoverText,
+                    hoverinfo: "text",
+                    zmin: -absMax,
+                    zmax: absMax,
+                    zmid: 0,
+                    colorscale: "RdBu",
+                    showscale: true
+                };
+    
+                const layout = {
+                    margin: { l: 140, r: 30, t: 10, b: 160 },
+                    xaxis: { tickangle: -45 },
+                    yaxis: { automargin: true }
+                };
+    
+                await Plotly.newPlot("heatmap", [trace], layout, { responsive: true });
+    
+                loadingIndicator.classList.add("d-none");
+            } catch (e) {
+                console.error(e);
+                loadingIndicator.classList.add("d-none");
+            }
+        }
+    
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById("btn-refresh").addEventListener("click", plotHeatmap);
+            plotHeatmap();
+        });
+    </script>
+</body>
+</html>

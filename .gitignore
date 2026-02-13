@@ -2,3 +2,4 @@
 ml-latest-unused/*
 scripts/*
 imdb-dataset/*
+.env

@@ -10,27 +10,25 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      # 1. Mount the script to the auto-run directory
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-      # 2. Mount the folder containing your CSVs
-      - ./ml-latest:/var/lib/mysql-files
+      - ./ml-latest:/var/lib/mysql-files/ml-latest
+      - ./personality-isf2018:/var/lib/mysql-files/personality-isf2018
+      - ./user-system:/var/lib/mysql-files/user-system
 
-  mysql:
-    image: mysql:latest
-    command: --innodb_redo_log_capacity=1073741824 --max_allowed_packet=64M
-  
   app:
     build: .
     container_name: python_app
     depends_on:
       - db
     ports:
-      - "5001:5000"  # This maps your computer's 5000 to the container's 5000
+      - "5001:5000"
     environment:
+      - PYTHONUNBUFFERED=1
+      - FLASK_SECRET_KEY=b539946948a1e777c1a0bab142b9b48887c838d81d050ce6
       - DATABASE_URL=mysql+pymysql://root:password123@db:3306/my_project_db
-    # We don't need to expose 5000 to the host, only Nginx needs to see it
-
-  web: 
+      - SECURITY_PEPPER=3daf86191e3f5805f8c20b2c82d0e911d406e9735d744ab7d4ba809f41dd83ce
+  
+  web:
     image: nginx:latest
     container_name: nginx_server
     ports:
