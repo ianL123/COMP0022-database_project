@@ -22,9 +22,11 @@ services:
       - db
     ports:
       - "5001:5000"
-    env_file: .env
     environment:
       - PYTHONUNBUFFERED=1
+      - FLASK_SECRET_KEY=b539946948a1e777c1a0bab142b9b48887c838d81d050ce6
+      - DATABASE_URL=mysql+pymysql://root:password123@db:3306/my_project_db
+      - SECURITY_PEPPER=3daf86191e3f5805f8c20b2c82d0e911d406e9735d744ab7d4ba809f41dd83ce
   
   web:
     image: nginx:latest
