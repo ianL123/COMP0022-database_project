@@ -2,12 +2,9 @@ from flask import Flask, render_template, request, jsonify, session, redirect, u
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
 from werkzeug.security import check_password_hash
-import dotenv
 import os
 import analytics
 import predict as predict_algo
-
-dotenv.load_dotenv()
 
 app = Flask(__name__)
 
@@ -423,7 +420,7 @@ def mylist():
             m.title,
             r.avg_rating
         FROM folder_contents fc
-        JOIN movies m ON fc.movie_id = m.movieId
+        JOIN movie_titles m ON fc.movie_id = m.movieId
         JOIN average_ratings r ON m.movieId = r.movieId
         JOIN user_folders uf ON fc.folder_id = uf.id
         WHERE uf.user_id = :u
