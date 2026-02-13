@@ -43,23 +43,6 @@ def index():
     f_runtime = inputs.get('runtime', '').strip()
     f_region = inputs.get('region', '').strip()
 
-    # base_sql = """
-    #     SELECT 
-    #         m.movieId,
-    #         m.title, 
-    #         m.genres,
-    #         SUBSTRING(m.title, -5, 4) AS release_year,
-    #         r.avg_rating,
-    #         r.count as vote_count,
-    #         o.directors,
-    #         o.topCast,
-    #         o.runtimeMinutes,
-    #         o.regions
-    #     FROM movies m
-    #     INNER JOIN average_ratings r ON m.movieId = r.movieId
-    #     LEFT JOIN others o ON m.movieId = o.movieId
-    # """
-
     base_sql = """
         SELECT
             t.movieId,
@@ -99,10 +82,6 @@ def index():
         ) reg ON t.movieId = reg.movieId
     """
 
-    
-    # tag_filter = ""
-    # if f_tag:
-    #     tag_filter = " AND EXISTS (SELECT 1 FROM tags t WHERE t.movieId = m.movieId AND t.tag LIKE :tag)"
     tag_filter = ""
     if f_tag:
         tag_filter = """
@@ -111,18 +90,6 @@ def index():
                 WHERE tg.movieId = t.movieId AND tg.tag LIKE :tag
             )
         """
-
-
-    # where_clause = """
-    #     WHERE m.title LIKE :title
-    #     AND m.genres LIKE :genre
-    #     AND (:year_start = '' OR SUBSTRING(m.title, -5, 4) >= :year_start)
-    #     AND (:year_end = '' OR SUBSTRING(m.title, -5, 4) <= :year_end)
-    #     AND (:director = '' OR o.directors LIKE :director)
-    #     AND (:actor = '' OR o.topCast LIKE :actor)
-    #     AND (:runtime = '' OR o.runtimeMinutes >= :runtime)
-    #     AND (:region = '' OR o.regions LIKE :region)
-    # """
 
     where_clause = """
         WHERE t.title LIKE :title
