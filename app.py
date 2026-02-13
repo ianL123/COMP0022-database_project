@@ -344,6 +344,41 @@ def add_to_folder():
         
     return redirect(request.referrer or url_for('index'))
 
+@app.route('/mylist')
+def mylist():
+    if 'user_id' not in session:
+        flash("Please sign in to view your lists.", "warning")
+        return redirect(url_for('login'))
+
+    user_id = session['user_id']
+    
+    # 1. Fetch all folders belonging to this user
+    folders_query = text("SELECT id, folder_name FROM user_folders WHERE user_id = :u")
+    folders = db.session.execute(folders_query, {'u': user_id}).fetchall()
+
+    # 2. Fetch all movies in those folders with metadata
+    # We join folder_contents with movies and average_ratings
+    items_query = text("""
+        SELECT 
+            fc.folder_id,
+            m.movieId,
+            m.title,
+            r.avg_rating
+        FROM folder_contents fc
+        JOIN movies m ON fc.movie_id = m.movieId
+        JOIN average_ratings r ON m.movieId = r.movieId
+        JOIN user_folders uf ON fc.folder_id = uf.id
+        WHERE uf.user_id = :u
+    """)
+    items = db.session.execute(items_query, {'u': user_id}).fetchall()
+
+    # Organize items by folder_id for easier looping in the template
+    organized_data = {f.id: [] for f in folders}
+    for item in items:
+        organized_data[item.folder_id].append(item)
+
+    return render_template('mylist.html', folders=folders, organized_data=organized_data)
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
     
