@@ -10,44 +10,10 @@ CREATE TABLE init_run_log (
 
 INSERT INTO init_run_log(stage) VALUES ('started');
 
-<<<<<<< Updated upstream
 -- 2. Create the Parent/Master table first
 CREATE TABLE IF NOT EXISTS movie_titles (
     movieId INT PRIMARY KEY,
     title VARCHAR(255) NOT NULL
-=======
--- 2. Schema Definition
--- We remove PRIMARY KEY constraints from ratings/tags to allow multiple entries per movie
--- CREATE TABLE IF NOT EXISTS movies (
---     movieId INT PRIMARY KEY,
---     title VARCHAR(255) NOT NULL,
---     genres VARCHAR(255) NOT NULL
--- ) CHARACTER SET utf8mb4;
-
-CREATE TABLE IF NOT EXISTS movie_titles (
-    movieId INT NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    PRIMARY KEY (movieId)
-) CHARACTER SET utf8mb4;
-
-CREATE TABLE IF NOT EXISTS movie_genres (
-    movieId INT NOT NULL,
-    genre VARCHAR(100) NOT NULL,
-    PRIMARY KEY (movieId, genre)
-);
-
-CREATE TABLE IF NOT EXISTS links (
-    movieId INT PRIMARY KEY,
-    imdbId VARCHAR(20) NOT NULL,
-    tmdbId VARCHAR(20) -- Changed to VARCHAR to prevent failure on empty CSV cells
-);
-
-CREATE TABLE IF NOT EXISTS tags (
-    userId INT NOT NULL,
-    movieId INT NOT NULL,
-    tag VARCHAR(255) NOT NULL,
-    timestamp BIGINT NOT NULL
->>>>>>> Stashed changes
 ) CHARACTER SET utf8mb4;
 
 -- 3. Create all other tables
@@ -106,7 +72,6 @@ CREATE TABLE IF NOT EXISTS movie_regions (
 );
 
 CREATE TABLE IF NOT EXISTS movie_runtimes (
-<<<<<<< Updated upstream
     movieId INT PRIMARY KEY,
     runtimeMinutes INT
 );
@@ -118,27 +83,6 @@ CREATE TABLE IF NOT EXISTS tags (
     timestamp BIGINT NOT NULL,
     PRIMARY KEY (userId, movieId, tag)
 ) CHARACTER SET utf8mb4;
-=======
-    movieId INT NOT NULL,
-    runtimeMinutes INT,
-    PRIMARY KEY (movieId, runtimeMinutes)
-);
-
--- CREATE TABLE IF NOT EXISTS others (
---     movieId INT PRIMARY KEY,
---     runtimeMinutes INT,
---     directors VARCHAR(255),
---     topCast VARCHAR(500),
---     regions VARCHAR(255)
--- );
-
-CREATE TABLE IF NOT EXISTS genre_affinity (
-    source VARCHAR(50),
-    target VARCHAR(50),
-    value INT,
-    score DECIMAL(5,4)
-);
->>>>>>> Stashed changes
 
 INSERT INTO init_run_log(stage) VALUES ('tables_created');
 
@@ -150,67 +94,7 @@ FIELDS TERMINATED BY ',' ENCLOSED BY '"'
 LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
 LOAD DATA INFILE '/var/lib/mysql-files/average_ratings.csv' 
-<<<<<<< Updated upstream
 INTO TABLE average_ratings 
-=======
-IGNORE INTO TABLE average_ratings
-FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
-LINES TERMINATED BY '\n' IGNORE 1 ROWS;
-
--- LOAD DATA INFILE '/var/lib/mysql-files/movies.csv' 
--- IGNORE INTO TABLE movies 
--- FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
--- LINES TERMINATED BY '\n' IGNORE 1 ROWS;
-
-LOAD DATA INFILE '/var/lib/mysql-files/movie_titles.csv' 
-IGNORE INTO TABLE movie_titles
-FIELDS TERMINATED BY ',' ENCLOSED BY '"'
-LINES TERMINATED BY '\n' IGNORE 1 ROWS;
-
-LOAD DATA INFILE '/var/lib/mysql-files/links.csv' 
-IGNORE INTO TABLE links 
-FIELDS TERMINATED BY ',' 
-LINES TERMINATED BY '\n' IGNORE 1 ROWS;
-
-LOAD DATA INFILE '/var/lib/mysql-files/tags.csv' 
-IGNORE INTO TABLE tags 
-FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
-LINES TERMINATED BY '\n' IGNORE 1 ROWS;
-
-LOAD DATA INFILE '/var/lib/mysql-files/movie_genres.csv' 
-IGNORE INTO TABLE movie_genres 
-FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
-LINES TERMINATED BY '\n' IGNORE 1 ROWS;
-
-LOAD DATA INFILE '/var/lib/mysql-files/genre_stats_summary.csv' 
-IGNORE INTO TABLE genre_stats_summary
-FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
-LINES TERMINATED BY '\n' IGNORE 1 ROWS;
-
--- LOAD DATA INFILE '/var/lib/mysql-files/others.csv' 
--- IGNORE INTO TABLE others
--- FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
--- LINES TERMINATED BY '\n' IGNORE 1 ROWS;
-
--- [新增] 加载新生成的规范化数据
-LOAD DATA INFILE '/var/lib/mysql-files/movie_directors.csv' 
-IGNORE INTO TABLE movie_directors
-FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
-LINES TERMINATED BY '\n' IGNORE 1 ROWS;
-
-LOAD DATA INFILE '/var/lib/mysql-files/movie_cast.csv' 
-IGNORE INTO TABLE movie_cast
-FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
-LINES TERMINATED BY '\n' IGNORE 1 ROWS;
-
-LOAD DATA INFILE '/var/lib/mysql-files/movie_regions.csv' 
-IGNORE INTO TABLE movie_regions
->>>>>>> Stashed changes
-FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
-LINES TERMINATED BY '\n' IGNORE 1 ROWS;
-
-LOAD DATA INFILE '/var/lib/mysql-files/movie_runtimes.csv' 
-IGNORE INTO TABLE movie_runtimes
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
 LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
@@ -260,27 +144,15 @@ FIELDS TERMINATED BY ',' ENCLOSED BY '"'
 LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
 -- Speed up Title searches
-<<<<<<< Updated upstream
 CREATE INDEX idx_movie_title ON movie_titles(title);
 
 -- Speed up the "Top Rated" sorting
 CREATE INDEX idx_avg_rating ON average_ratings(avg_rating);
 
 -- Specific index for actors and directors
-=======
--- CREATE INDEX idx_movie_title ON movie(title);
-CREATE INDEX idx_movie_title ON movie_titles(title);
--- Speed up the "Top Rated" sorting on the home page
-CREATE INDEX idx_avg_rating ON average_ratings(avg_rating);
-
--- CREATE INDEX idx_others_movieid ON others(movieId);
-
--- [新增] 为新表增加索引以备未来优化查询
->>>>>>> Stashed changes
 CREATE INDEX idx_director_name ON movie_directors(director);
 CREATE INDEX idx_actor_name ON movie_casts(actor);
 CREATE INDEX idx_region_code ON movie_regions(region);
-CREATE INDEX idx_runtimes ON movie_runtimes(runtimeMinutes);
 
 -- Create Foreign Keys
 
