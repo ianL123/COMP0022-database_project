@@ -3,9 +3,9 @@ USE my_project_db;
 -- 1. Setup Logging
 DROP TABLE IF EXISTS init_run_log;
 CREATE TABLE init_run_log (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  stage VARCHAR(64) NOT NULL,
-  ran_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    stage VARCHAR(64) NOT NULL,
+    ran_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 INSERT INTO init_run_log(stage) VALUES ('started');
@@ -159,10 +159,91 @@ CREATE INDEX idx_director_name ON movie_directors(director);
 CREATE INDEX idx_actor_name ON movie_cast(actor);
 CREATE INDEX idx_region_code ON movie_regions(region);
 CREATE INDEX idx_runtimes ON movie_runtimes(runtimeMinutes);
+
+-- =========================
+-- Personality dataset tables
+-- =========================
+
+DROP TABLE IF EXISTS personality_data;
+CREATE TABLE personality_data (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    userId VARCHAR(64) NOT NULL,
+    openness DECIMAL(5,2),
+    agreeableness DECIMAL(5,2),
+    emotional_stability DECIMAL(5,2),
+    conscientiousness DECIMAL(5,2),
+    extraversion DECIMAL(5,2),
+    assigned_metric VARCHAR(50),
+    assigned_condition VARCHAR(50),
+    is_personalized INT,
+    enjoy_watching INT,
+    INDEX idx_pd_user (userId)
+) CHARACTER SET utf8mb4;
+
+
+DROP TABLE IF EXISTS personality_ratings;
+CREATE TABLE personality_ratings (
+    userId VARCHAR(64) NOT NULL,
+    movieId INT NOT NULL,
+    rating DECIMAL(3,1) NOT NULL,
+    tstamp DATETIME,
+    INDEX idx_pr_movie (movieId),
+    INDEX idx_pr_user (userId)
+) CHARACTER SET utf8mb4;
+
+INSERT INTO init_run_log(stage) VALUES ('tables_created_personality');
+
+-- Load personality-data.csv (ignore trailing columns)
+LOAD DATA INFILE '/var/lib/mysql-files/personality-isf2018/personality-data.csv'
+INTO TABLE personality_data
+FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"' 
+LINES TERMINATED BY '\n'
+IGNORE 1 ROWS
+(
+    @userId,
+    @openness,
+    @agreeableness,
+    @emotional_stability,
+    @conscientiousness,
+    @extraversion,
+    @assigned_metric,
+    @assigned_condition,
+    -- ignore the rest columns until last two (we will just swallow all remaining)
+    @c1,@c2,@c3,@c4,@c5,@c6,@c7,@c8,@c9,@c10,@c11,@c12,@c13,@c14,@c15,@c16,@c17,@c18,@c19,@c20,@c21,@c22,@c23,@c24,
+    @is_personalized,
+    @enjoy_watching
+)
+SET
+    userId = TRIM(@userId),
+    openness = NULLIF(TRIM(@openness),''),
+    agreeableness = NULLIF(TRIM(@agreeableness),''),
+    emotional_stability = NULLIF(TRIM(@emotional_stability),''),
+    conscientiousness = NULLIF(TRIM(@conscientiousness),''),
+    extraversion = NULLIF(TRIM(@extraversion),''),
+    assigned_metric = NULLIF(TRIM(@assigned_metric),''),
+    assigned_condition = NULLIF(TRIM(@assigned_condition),''),
+    is_personalized = NULLIF(TRIM(@is_personalized),''),
+    enjoy_watching = NULLIF(TRIM(@enjoy_watching),'');
+
+LOAD DATA INFILE '/var/lib/mysql-files/personality-isf2018/ratings.csv'
+INTO TABLE personality_ratings
+FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"'
+LINES TERMINATED BY '\n'
+IGNORE 1 ROWS
+(@userId, @movieId, @rating, @tstamp)
+SET
+    userId = TRIM(@userId),
+    movieId = NULLIF(TRIM(@movieId),''),
+    rating = NULLIF(TRIM(@rating),''),
+    tstamp = NULLIF(TRIM(@tstamp),'');
+
+CREATE INDEX idx_mg_genre ON movie_genres(genre);
+CREATE INDEX idx_mg_movie ON movie_genres(movieId);
+
 CREATE TABLE IF NOT EXISTS heatmap_cache (
-  cache_key VARCHAR(64) PRIMARY KEY,
-  payload JSON NOT NULL,
-  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    cache_key VARCHAR(64) PRIMARY KEY,
+    payload JSON NOT NULL,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_pr_user ON personality_ratings(userId);
