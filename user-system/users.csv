@@ -1,2 +1,2 @@
 id,username,password
-1,admin,admin
+1,admin,scrypt:32768:8:1$LrLcQt8oMslnZb6t$7b57cbc2509dee0b5a87aad46a0ca4d15f991bf8d708d82b7bfe19cac9100b83ff7a1ffd6c99f63f63db26d8ad13ca5c4a1b22c0b70d580a637cfd98cb7e574e

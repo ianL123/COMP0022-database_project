@@ -284,4 +284,9 @@ CREATE TABLE IF NOT EXISTS folder_contents (
     UNIQUE KEY unique_movie_in_folder (folder_id, movie_id)
 );
 
+ALTER TABLE folder_contents
+ADD CONSTRAINT fk_folder_id
+FOREIGN KEY (folder_id) REFERENCES user_folders(id)
+ON DELETE CASCADE;
+
 INSERT INTO init_run_log(stage) VALUES ('finished');

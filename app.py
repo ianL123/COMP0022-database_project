@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
+from werkzeug.security import check_password_hash
 import dotenv
 import os
 import analytics
@@ -11,6 +12,8 @@ dotenv.load_dotenv()
 app = Flask(__name__)
 
 app.secret_key = os.environ.get('FLASK_SECRET_KEY')
+
+PEPPER = os.environ.get('SECURITY_PEPPER')
 
 # Configure database
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
@@ -284,18 +287,29 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
 
-        # Query your user table
+        # 1. Fetch user from the database
         user_query = text("SELECT id, username, password FROM users WHERE username = :username")
         user = db.session.execute(user_query, {'username': username}).fetchone()
 
-        # Simple verification (In a real app, use password hashing like Werkzeug)
-        if user and user.password == password:
-            session['user_id'] = user.id
-            session['username'] = user.username
-            flash('Successfully logged in!', 'success')
-            return redirect(url_for('index'))
-        else:
-            flash('Invalid username or password.', 'danger')
+        if user:
+            # 2. Add the Pepper to the user's input password
+            peppered_input = password.strip() + PEPPER.strip()
+            print(f"DEBUG: Input Password: {password}")
+            print(f"DEBUG: Pepper being used: {PEPPER}")
+            print(f"DEBUG: Combined String: {peppered_input}")
+            print(f"DEBUG: Hashed string: {user.password.strip()}")
+            
+            # 3. Securely check the hash
+            # check_password_hash handles the salt extraction automatically
+            if check_password_hash(user.password.strip(), peppered_input):
+                print("MATCH")
+                session['user_id'] = user.id
+                session['username'] = user.username
+                flash('Successfully logged in!', 'success')
+                return redirect(url_for('index'))
+        
+        # If user doesn't exist or hash doesn't match
+        flash('Invalid username or password.', 'danger')
             
     return render_template('login.html')
 
@@ -343,6 +357,50 @@ def add_to_folder():
         flash("Added to list!", "success")
         
     return redirect(request.referrer or url_for('index'))
+
+@app.route('/delete_from_folder', methods=['POST'])
+def delete_from_folder():
+    if 'user_id' not in session: return redirect(url_for('login'))
+    
+    movie_id = request.form.get('movie_id')
+    folder_id = request.form.get('folder_id')
+    
+    # Verify ownership before deleting
+    sql = text("""
+        DELETE fc FROM folder_contents fc
+        JOIN user_folders uf ON fc.folder_id = uf.id
+        WHERE fc.movie_id = :m AND fc.folder_id = :f AND uf.user_id = :u
+    """)
+    
+    try:
+        db.session.execute(sql, {'m': movie_id, 'f': folder_id, 'u': session['user_id']})
+        db.session.commit()
+        flash("Movie removed from list.", "info")
+    except Exception as e:
+        db.session.rollback()
+        flash("Error removing movie.", "danger")
+        
+    return redirect(url_for('mylist'))
+
+@app.route('/delete_folder', methods=['POST'])
+def delete_folder():
+    if 'user_id' not in session: return redirect(url_for('login'))
+    
+    folder_id = request.form.get('folder_id')
+    
+    # Since we used ON DELETE CASCADE in SQL, 
+    # deleting the folder automatically removes its contents.
+    sql = text("DELETE FROM user_folders WHERE id = :f AND user_id = :u")
+    
+    try:
+        db.session.execute(sql, {'f': folder_id, 'u': session['user_id']})
+        db.session.commit()
+        flash("List deleted.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash("Error deleting list.", "danger")
+        
+    return redirect(url_for('mylist'))
 
 @app.route('/mylist')
 def mylist():

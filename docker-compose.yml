@@ -22,9 +22,10 @@ services:
       - db
     ports:
       - "5001:5000"
+    env_file: .env
     environment:
-      - DATABASE_URL=mysql+pymysql://root:password123@db:3306/my_project_db
-
+      - PYTHONUNBUFFERED=1
+  
   web:
     image: nginx:latest
     container_name: nginx_server
