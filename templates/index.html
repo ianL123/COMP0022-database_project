@@ -208,12 +208,25 @@
                         </td>
                         <td>
                             {% if is_logged_in %}
-                                <form action="{{ url_for('add_to_list') }}" method="POST" style="display:inline;">
-                                    <input type="hidden" name="movie_id" value="{{ row.movieId }}">
-                                    <button type="submit" class="btn btn-sm btn-success rounded-circle">
-                                        <i class="bi bi-plus-lg"></i>
-                                    </button>
-                                </form>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-success rounded-circle" data-bs-toggle="dropdown">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><h6 class="dropdown-header">Add to List:</h6></li>
+                                    {% for folder in folders %}
+                                    <li>
+                                        <form action="/add_to_folder" method="POST">
+                                            <input type="hidden" name="movie_id" value="{{ row.movieId }}">
+                                            <input type="hidden" name="folder_id" value="{{ folder.id }}">
+                                            <button type="submit" class="dropdown-item">{{ folder.folder_name }}</button>
+                                        </form>
+                                    </li>
+                                    {% endfor %}
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item small text-primary" href="#" data-bs-toggle="modal" data-bs-target="#newFolderModal">+ Create New List</a></li>
+                                </ul>
+                            </div>
                             {% endif %}
                         </td>
                     </tr>

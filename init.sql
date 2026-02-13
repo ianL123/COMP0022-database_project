@@ -265,12 +265,23 @@ INTO TABLE users
 FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"'
 LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
-CREATE TABLE IF NOT EXISTS user_watchlist (
+-- 1. Create the master table for lists
+CREATE TABLE IF NOT EXISTS user_folders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
+    folder_name VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 2. Update the watchlist to reference a specific folder
+CREATE TABLE IF NOT EXISTS folder_contents (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    folder_id INT NOT NULL,
     movie_id INT NOT NULL,
     added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY unique_user_movie (user_id, movie_id) -- Prevents adding same movie twice
+    FOREIGN KEY (folder_id) REFERENCES user_folders(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_movie_in_folder (folder_id, movie_id)
 );
 
 INSERT INTO init_run_log(stage) VALUES ('finished');

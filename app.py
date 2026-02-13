@@ -177,13 +177,18 @@ def index():
         print(f"Database Error: {e}")
         alerts.append("Search unavailable - please check your database connection.")
 
+    user_folders = []
+    if is_logged_in:
+        folder_sql = text("SELECT id, folder_name FROM user_folders WHERE user_id = :u")
+        user_folders = db.session.execute(folder_sql, {'u': session['user_id']}).fetchall()
+
     # 3. Pass is_logged_in to the template
-    return render_template(
-        'index.html', 
+    return render_template('index.html', 
         results=results, 
         alerts=alerts, 
         inputs=inputs, 
-        is_logged_in=is_logged_in
+        is_logged_in=is_logged_in,
+        folders=user_folders
     )
 
 # === Task 2: Analytics Reports Route ===
@@ -299,42 +304,35 @@ def logout():
     session.clear()
     return redirect(url_for('index'))
 
-@app.route('/add_to_list', methods=['POST'])
-def add_to_list():
-    if 'user_id' not in session:
-        flash('You must be signed in to add movies.', 'warning')
-        return redirect(url_for('login'))
-
-    movie_id = request.form.get('movie_id')
+@app.route('/create_folder', methods=['POST'])
+def create_folder():
+    if 'user_id' not in session: return redirect(url_for('login'))
+    
+    name = request.form.get('folder_name', 'My New List').strip()
     user_id = session['user_id']
-
-    try:
-        sql = text("INSERT IGNORE INTO user_watchlist (user_id, movie_id) VALUES (:u, :m)")
-        db.session.execute(sql, {'u': user_id, 'm': movie_id})
-        db.session.commit()
-        flash('Movie added to your list!', 'success')
-    except Exception as e:
-        print(f"Error: {e}")
-        flash('Could not add movie.', 'danger')
-
+    
+    sql = text("INSERT INTO user_folders (user_id, folder_name) VALUES (:u, :n)")
+    db.session.execute(sql, {'u': user_id, 'n': name})
+    db.session.commit()
     return redirect(request.referrer or url_for('index'))
 
-@app.route('/delete_from_list', methods=['POST'])
-def delete_from_list():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-
+@app.route('/add_to_folder', methods=['POST'])
+def add_to_folder():
+    if 'user_id' not in session: return redirect(url_for('login'))
+    
+    folder_id = request.form.get('folder_id')
     movie_id = request.form.get('movie_id')
-    user_id = session['user_id']
-
-    try:
-        sql = text("DELETE FROM user_watchlist WHERE user_id = :u AND movie_id = :m")
-        db.session.execute(sql, {'u': user_id, 'm': movie_id})
+    
+    # Ensure this folder belongs to the logged-in user
+    check_sql = text("SELECT id FROM user_folders WHERE id = :f AND user_id = :u")
+    owner = db.session.execute(check_sql, {'f': folder_id, 'u': session['user_id']}).fetchone()
+    
+    if owner:
+        insert_sql = text("INSERT IGNORE INTO folder_contents (folder_id, movie_id) VALUES (:f, :m)")
+        db.session.execute(insert_sql, {'f': folder_id, 'm': movie_id})
         db.session.commit()
-        flash('Movie removed.', 'info')
-    except Exception as e:
-        print(f"Error: {e}")
-
+        flash("Added to list!", "success")
+        
     return redirect(request.referrer or url_for('index'))
 
 if __name__ == '__main__':
