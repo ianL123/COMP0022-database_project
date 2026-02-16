@@ -1,32 +1,46 @@
-// ===== Threshold State =====
-let currentThresholds = [0.2, 0.4, 0.6, 0.8];
-let colorScale = null;
+// ===== Continuous Gradient Warp (3 control knots) =====
+// t1/t2/t3 control where u=0.25/0.50/0.75 happens along score axis
+let currentKnots = [0.25, 0.50, 0.75];
 
-function build5Colors() {
-    const interp = d3.interpolateYlGnBu;
-    return [0.15, 0.35, 0.55, 0.75, 0.95].map(t => interp(t));
-}
+// warpScale: score (0..1) -> u (0..1) continuous, piecewise linear
+let warpScale = null;
 
-function normalizeAndSortThresholds(arr) {
+function normalizeAndSortKnots(arr) {
     let t = arr.map(x => Math.max(0, Math.min(0.99, +x))).sort((a, b) => a - b);
+
+    // Ensure strictly increasing
     const eps = 0.01;
     for (let i = 1; i < t.length; i++) {
         if (t[i] <= t[i - 1]) {
             t[i] = Math.min(0.99, t[i - 1] + eps);
         }
     }
+
+    // Keep last knot < 1
+    t[2] = Math.min(t[2], 0.99);
+
     return t;
 }
 
-function rebuildColorScale() {
-    colorScale = d3.scaleThreshold()
-        .domain(currentThresholds)
-        .range(build5Colors());
+function rebuildWarpScale() {
+    // Piecewise linear mapping:
+    // score = t1 -> u=0.25
+    // score = t2 -> u=0.50
+    // score = t3 -> u=0.75
+    warpScale = d3.scaleLinear()
+        .domain([0, currentKnots[0], currentKnots[1], currentKnots[2], 1])
+        .range([0, 0.25, 0.50, 0.75, 1])
+        .clamp(true);
 }
 
-function bindThresholdTuner(scoreMatrix) {
-    const ids = ["t1", "t2", "t3", "t4"];
-    const valIds = ["t1Val", "t2Val", "t3Val", "t4Val"];
+function colorOfScore(score) {
+    const u = warpScale(score);
+    return d3.interpolateYlGnBu(u);
+}
+
+function bindKnotTuner(scoreMatrix) {
+    const ids = ["t1", "t2", "t3"];
+    const valIds = ["t1Val", "t2Val", "t3Val"];
 
     const inputs = ids.map(id => document.getElementById(id));
     const labels = valIds.map(id => document.getElementById(id));
@@ -35,8 +49,8 @@ function bindThresholdTuner(scoreMatrix) {
         return;
     }
 
-    function syncUI(thresholds) {
-        thresholds.forEach((v, i) => {
+    function syncUI(knots) {
+        knots.forEach((v, i) => {
             inputs[i].value = v.toFixed(2);
             labels[i].textContent = v.toFixed(2);
         });
@@ -44,24 +58,37 @@ function bindThresholdTuner(scoreMatrix) {
 
     function update() {
         const raw = inputs.map(x => parseFloat(x.value));
-        currentThresholds = normalizeAndSortThresholds(raw);
-        syncUI(currentThresholds);
-        rebuildColorScale();
+        currentKnots = normalizeAndSortKnots(raw);
+        syncUI(currentKnots);
+        rebuildWarpScale();
 
         d3.select("#chord-chart")
             .selectAll(".chord-ribbon")
             .transition()
             .duration(120)
-            .attr("fill", d => colorScale(scoreMatrix[d.source.index][d.target.index]))
+            .attr("fill", d => {
+                const s = scoreMatrix[d.source.index][d.target.index];
+                return colorOfScore(s);
+            })
             .attr("stroke", d => {
                 const s = scoreMatrix[d.source.index][d.target.index];
-                return s > currentThresholds[2]
-                    ? d3.rgb(colorScale(s)).darker()
+                // Use the middle knot (maps to u=0.50) as "high affinity" border threshold
+                return s > currentKnots[1]
+                    ? d3.rgb(colorOfScore(s)).darker()
                     : "none";
+            })
+            .attr("fill-opacity", d => {
+                const s = scoreMatrix[d.source.index][d.target.index];
+                // Opacity follows warped u for consistent perception
+                const u = warpScale(s);
+                return d3.scalePow()
+                    .exponent(2)
+                    .domain([0, 1])
+                    .range([0.1, 0.85])(u);
             });
     }
 
-    syncUI(currentThresholds);
+    syncUI(currentKnots);
     inputs.forEach(inp => inp.addEventListener("input", update));
 }
 
@@ -100,7 +127,7 @@ function drawChordChart(data) {
         .append("svg")
         .attr("viewBox", [-width / 2, -height / 2, width, height]);
 
-    rebuildColorScale();
+    rebuildWarpScale();
 
     const chord = d3.chord()
         .padAngle(0.04)
@@ -144,18 +171,22 @@ function drawChordChart(data) {
         .join("path")
         .attr("class", "chord-ribbon")
         .attr("d", ribbon)
-        .attr("fill", d => colorScale(scoreMatrix[d.source.index][d.target.index]))
+        .attr("fill", d => {
+            const s = scoreMatrix[d.source.index][d.target.index];
+            return colorOfScore(s);
+        })
         .attr("fill-opacity", d => {
             const s = scoreMatrix[d.source.index][d.target.index];
+            const u = warpScale(s);
             return d3.scalePow()
                 .exponent(2)
                 .domain([0, 1])
-                .range([0.1, 0.85])(s);
+                .range([0.1, 0.85])(u);
         })
         .attr("stroke", d => {
             const s = scoreMatrix[d.source.index][d.target.index];
-            return s > currentThresholds[2]
-                ? d3.rgb(colorScale(s)).darker()
+            return s > currentKnots[1]
+                ? d3.rgb(colorOfScore(s)).darker()
                 : "none";
         })
         .style("mix-blend-mode", "multiply")
@@ -169,5 +200,5 @@ Shared Fans: ${matrix[d.source.index][d.target.index]}
 Affinity Score: ${(score * 100).toFixed(2)}%`;
         });
 
-    bindThresholdTuner(scoreMatrix);
+    bindKnotTuner(scoreMatrix);
 }
