@@ -80,18 +80,41 @@
                             <span>Strong Niche Link</span>
                         </div>
                     </div>
-
-                    <ul class="small text-muted ps-3">
-                        <li><strong>Arcs:</strong> Outer segments represent genre size.</li>
-                        <li><strong>Thickness:</strong> Total volume of shared high-rating users.</li>
-                        <li><strong>Color Depth:</strong> Percentage of audience overlap.</li>
-                    </ul>
+                    <div class="mt-4">
+                        <label class="small fw-bold text-dark d-block mb-2">
+                            <i class="bi bi-sliders"></i> Affinity Gradient Tuner
+                        </label>
+                    
+                        <div class="mb-2">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted small">colour25%</span>
+                                <span class="text-muted small"><span id="t1Val">0.25</span></span>
+                            </div>
+                            <input id="t1" type="range" min="0" max="0.98" step="0.01" value="0.25" class="form-range">
+                        </div>
+                    
+                        <div class="mb-2">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted small">colour50%</span>
+                                <span class="text-muted small"><span id="t2Val">0.50</span></span>
+                            </div>
+                            <input id="t2" type="range" min="0" max="0.99" step="0.01" value="0.50" class="form-range">
+                        </div>
+                    
+                        <div class="mb-2">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted small">colour75%</span>
+                                <span class="text-muted small"><span id="t3Val">0.75</span></span>
+                            </div>
+                            <input id="t3" type="range" min="0" max="0.99" step="0.01" value="0.75" class="form-range">
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div class="col-md-9">
                 <div class="card shadow-sm p-4 text-center">
-                    <h5 class="text-dark mb-4">Genre Affinity Heatmap</h5>
+                    <h5 class="text-dark mb-4">Genre Affinity Chord Diagram</h5>
                     
                     <div id="chord-chart"></div>
                     
