@@ -209,7 +209,8 @@ CREATE TABLE IF NOT EXISTS user_folders (
     user_id INT NOT NULL,
     folder_name VARCHAR(100) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_folder_per_user (user_id, folder_name)
 );
 
 CREATE TABLE IF NOT EXISTS folder_contents (
