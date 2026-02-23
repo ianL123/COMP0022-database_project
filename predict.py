@@ -44,7 +44,7 @@ def get_prediction(db_session, form_data):
         key = f"actor_{i}"
         selects.append(
             f"SELECT movieId, {WEIGHTS['actor']} AS score "
-            f"FROM movie_casts "
+            f"FROM movie_cast "
             f"WHERE actor REGEXP :{key}"
         )
         params[key] = build_strict_regex(actor, 'name')
