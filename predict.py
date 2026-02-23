@@ -1,5 +1,6 @@
 from sqlalchemy import text
 import re
+import math
 
 def get_prediction(db_session, form_data):
     p_genre = form_data.get('genre', '').strip()
@@ -56,7 +57,7 @@ def get_prediction(db_session, form_data):
         selects.append(
             f"SELECT movieId, {WEIGHTS['genre']} AS score "
             f"FROM movie_genres "
-            f"WHERE genre = :{key}"
+            f"WHERE REPLACE(genre, '\r', '') = :{key}"
         )
         params[key] = genre
 
@@ -180,6 +181,23 @@ def get_prediction(db_session, form_data):
 
         predicted_score = numerator / denominator if denominator > 0 else 0.0
 
+        # ==========================================
+        # 新增：计算加权标准差与置信区间 (Expected Range)
+        # ==========================================
+        variance_sum = 0.0
+        for item in similar_list:
+            # 计算方差：权重 * (真实评分 - 预测平均分)^2
+            variance_sum += item['similarity'] * ((item['rating'] - predicted_score) ** 2)
+            
+        weighted_variance = variance_sum / denominator if denominator > 0 else 0.0
+        std_dev = math.sqrt(weighted_variance)
+        
+        # 使用 1 个标准差作为预计波动范围，并限制在 0.5 到 5.0 星之间
+        margin = std_dev
+        lower_bound = max(0.5, round(predicted_score - margin, 2))
+        upper_bound = min(5.0, round(predicted_score + margin, 2))
+        # ==========================================
+
         num_matches = len(results)
         avg_similarity = denominator / num_matches if num_matches > 0 else 0.0
 
@@ -192,6 +210,8 @@ def get_prediction(db_session, form_data):
 
         return {
             'predicted_score': round(predicted_score, 2),
+            'lower_bound': lower_bound,   # <-- 新增传给前端
+            'upper_bound': upper_bound,   # <-- 新增传给前端
             'confidence': confidence_level,
             'similar_movies': similar_list,
             'match_count': len(similar_list)

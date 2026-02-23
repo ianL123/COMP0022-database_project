@@ -126,6 +126,10 @@
                             <div class="card-body text-center py-5">
                                 <h6 class="text-uppercase text-muted letter-spacing-2">Predicted Audience Rating</h6>
                                 <h1 class="display-1 fw-bold text-success mb-0">{{ prediction.predicted_score }}</h1>
+
+                                <p class="text-muted fs-5 mt-2 mb-2">
+                                    Expected Range: <span class="fw-bold text-dark">{{ prediction.lower_bound }} - {{ prediction.upper_bound }}</span>
+                                </p>
                                 <div class="mb-2">
                                     {% for i in range(1, 6) %}
                                         {% if i <= prediction.predicted_score|round %}
