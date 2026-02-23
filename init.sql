@@ -38,7 +38,8 @@ CREATE TABLE IF NOT EXISTS tags (
     userId INT NOT NULL,
     movieId INT NOT NULL,
     tag VARCHAR(255) NOT NULL,
-    timestamp BIGINT NOT NULL
+    timestamp BIGINT NOT NULL,
+    PRIMARY KEY (userId, movieId, tag)
 ) CHARACTER SET utf8mb4;
 
 CREATE TABLE IF NOT EXISTS average_ratings (
@@ -75,8 +76,9 @@ CREATE TABLE IF NOT EXISTS movie_regions (
 );
 
 CREATE TABLE IF NOT EXISTS movie_runtimes (
-    movieId INT PRIMARY KEY,
-    runtimeMinutes INT
+    movieId INT,
+    runtimeMinutes INT,
+    PRIMARY KEY (movieId, runtimeMinutes)
 );
 
 CREATE TABLE IF NOT EXISTS genre_affinity (
