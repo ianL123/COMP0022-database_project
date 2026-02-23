@@ -9,10 +9,10 @@ def get_prediction(db_session, form_data):
     p_runtime = form_data.get('runtime', '').strip()
 
     WEIGHTS = {
-        'director': 5.0,
-        'actor': 2.0,
-        'genre': 3.0,
-        'tag': 5.0,
+        'director': 6.0,
+        'actor': 10.0,
+        'genre': 8.0,
+        'tag': 6.0,
         'runtime': 1.0
     }
 
@@ -183,9 +183,9 @@ def get_prediction(db_session, form_data):
         num_matches = len(results)
         avg_similarity = denominator / num_matches if num_matches > 0 else 0.0
 
-        if avg_similarity >= 4.0:
+        if avg_similarity > 10.0:
             confidence_level = "High"
-        elif avg_similarity >= 2.0:
+        elif avg_similarity > 5.0:
             confidence_level = "Medium"
         else:
             confidence_level = "Low"
