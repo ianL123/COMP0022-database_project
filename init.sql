@@ -71,8 +71,9 @@ CREATE TABLE IF NOT EXISTS movie_cast (
 );
 
 CREATE TABLE IF NOT EXISTS movie_regions (
-    movieId INT PRIMARY KEY,
-    region VARCHAR(50) NOT NULL
+    movieId INT NOT NULL,
+    region VARCHAR(50) NOT NULL,
+    PRIMARY KEY (movieId, region)
 );
 
 CREATE TABLE IF NOT EXISTS movie_runtimes (
