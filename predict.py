@@ -93,7 +93,7 @@ def get_prediction(db_session, form_data):
 
             sql_runtime = f"""
                 SELECT movieId, {WEIGHTS['runtime']} AS score
-                FROM movie_runtimes
+                FROM movies
                 WHERE (
                     CASE
                         WHEN runtimeMinutes < 90 THEN 'Short'
@@ -146,7 +146,7 @@ def get_prediction(db_session, form_data):
             sm.total_similarity,
             COALESCE(d.directors, '') AS directors
         FROM similar_movies sm
-        JOIN movie_titles t ON sm.movieId = t.movieId
+        JOIN movies t ON sm.movieId = t.movieId
         LEFT JOIN average_ratings r ON sm.movieId = r.movieId
         LEFT JOIN agg_genres g ON sm.movieId = g.movieId
         LEFT JOIN agg_directors d ON sm.movieId = d.movieId
