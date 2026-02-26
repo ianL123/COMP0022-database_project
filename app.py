@@ -10,7 +10,7 @@ app = Flask(__name__)
 
 app.secret_key = os.environ.get('FLASK_SECRET_KEY')
 
-PEPPER = os.environ.get('SECURITY_PEPPER')
+PEPPER = os.environ.get('SECURITY_PEPPER', 'a-very-safe-fallback')
 
 # Configure database
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
@@ -121,7 +121,7 @@ def index():
 
 
     order_by = "ORDER BY r.count DESC"
-    sql = f"{base_sql} {where_clause} {tag_filter} {order_by} LIMIT 50"
+    sql = " ".join([base_sql, where_clause, tag_filter, order_by, "LIMIT 50"])
     
     params = {
         'title': f'%{f_title}%',
@@ -141,7 +141,7 @@ def index():
         if results and any(row.directors is None for row in results):
             alerts.append("Some movies are missing extended metadata from the 'others' database.")
     except Exception as e:
-        print(f"Database Error: {e}")
+        print(f"Database Error")
         alerts.append("Search unavailable - please check your database connection.")
 
     user_folders = []
@@ -315,7 +315,6 @@ def register():
         except Exception as e:
             db.session.rollback()
             flash('An error occurred during registration. Please try again.', 'danger')
-            print(f"Error: {e}")
 
     return render_template('register.html')
 
