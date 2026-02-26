@@ -16,9 +16,10 @@ INSERT INTO init_run_log(stage) VALUES ('started');
 -- 2. Schema Definition
 -- ==========================================
 
-CREATE TABLE IF NOT EXISTS movie_titles (
+CREATE TABLE IF NOT EXISTS movies (
     movieId INT,
     title VARCHAR(255) NOT NULL,
+    runtimeMinutes INT,
     PRIMARY KEY (movieId)
 ) CHARACTER SET utf8mb4;
 
@@ -76,12 +77,6 @@ CREATE TABLE IF NOT EXISTS movie_regions (
     PRIMARY KEY (movieId, region)
 );
 
-CREATE TABLE IF NOT EXISTS movie_runtimes (
-    movieId INT,
-    runtimeMinutes INT,
-    PRIMARY KEY (movieId, runtimeMinutes)
-);
-
 CREATE TABLE IF NOT EXISTS genre_affinity (
     source VARCHAR(50),
     target VARCHAR(50),
@@ -134,9 +129,11 @@ LOAD DATA INFILE '/var/lib/mysql-files/ml-latest/average_ratings.csv'
 IGNORE INTO TABLE average_ratings FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 INSERT INTO init_run_log(stage) VALUES ('average_ratings_loaded');
 
-LOAD DATA INFILE '/var/lib/mysql-files/ml-latest/movie_titles.csv' 
-IGNORE INTO TABLE movie_titles FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
-INSERT INTO init_run_log(stage) VALUES ('movie_titles_loaded');
+LOAD DATA INFILE '/var/lib/mysql-files/ml-latest/movies.csv' 
+IGNORE INTO TABLE movies FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+(movieId, title, @runtimeMinutes)
+SET runtimeMinutes = NULLIF(TRIM(@runtimeMinutes), '');
+INSERT INTO init_run_log(stage) VALUES ('movies_loaded');
 
 LOAD DATA INFILE '/var/lib/mysql-files/ml-latest/links.csv' 
 IGNORE INTO TABLE links FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
@@ -166,10 +163,6 @@ LOAD DATA INFILE '/var/lib/mysql-files/ml-latest/movie_regions.csv'
 IGNORE INTO TABLE movie_regions FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 INSERT INTO init_run_log(stage) VALUES ('movie_regions_loaded');
 
-LOAD DATA INFILE '/var/lib/mysql-files/ml-latest/movie_runtimes.csv' 
-IGNORE INTO TABLE movie_runtimes FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
-INSERT INTO init_run_log(stage) VALUES ('movie_runtimes_loaded');
-
 LOAD DATA INFILE '/var/lib/mysql-files/ml-latest/genre_affinity.csv' 
 IGNORE INTO TABLE genre_affinity FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 INSERT INTO init_run_log(stage) VALUES ('genre_affinity_loaded');
@@ -198,7 +191,7 @@ INSERT INTO init_run_log(stage) VALUES ('ALL DATA LOADED');
 
 -- Removed the ALTER TABLE Primary Keys as they are now defined in CREATE TABLE
 
-CREATE INDEX idx_movie_title ON movie_titles(title);
+CREATE INDEX idx_movie_title ON movies(title);
 CREATE INDEX idx_avg_rating ON average_ratings(avg_rating);
 CREATE INDEX idx_director_name ON movie_directors(director);
 CREATE INDEX idx_actor_name ON movie_cast(actor);
@@ -222,5 +215,27 @@ CREATE TABLE IF NOT EXISTS folder_contents (
     FOREIGN KEY (folder_id) REFERENCES user_folders(id) ON DELETE CASCADE,
     UNIQUE KEY unique_movie_in_folder (folder_id, movie_id)
 );
+
+-- ==========================================
+-- 5. Foreign Keys Definitions
+-- ==========================================
+
+ALTER TABLE movie_genres 
+    ADD CONSTRAINT fk_mg_movie FOREIGN KEY (movieId) REFERENCES movies(movieId) ON DELETE CASCADE;
+
+ALTER TABLE average_ratings 
+    ADD CONSTRAINT fk_ar_movie FOREIGN KEY (movieId) REFERENCES movies(movieId) ON DELETE CASCADE;
+
+ALTER TABLE movie_directors 
+    ADD CONSTRAINT fk_md_movie FOREIGN KEY (movieId) REFERENCES movies(movieId) ON DELETE CASCADE;
+
+ALTER TABLE movie_cast 
+    ADD CONSTRAINT fk_mc_movie FOREIGN KEY (movieId) REFERENCES movies(movieId) ON DELETE CASCADE;
+
+ALTER TABLE movie_regions 
+    ADD CONSTRAINT fk_mreg_movie FOREIGN KEY (movieId) REFERENCES movies(movieId) ON DELETE CASCADE;
+
+ALTER TABLE tags 
+    ADD CONSTRAINT fk_tags_movie FOREIGN KEY (movieId) REFERENCES movies(movieId) ON DELETE CASCADE;
 
 INSERT INTO init_run_log(stage) VALUES ('finished');
