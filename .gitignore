@@ -1,5 +1,6 @@
 *.DS_Store*
 ml-latest-unused/*
+ml-latest/script.py
 scripts/*
 imdb-dataset/*
 .env

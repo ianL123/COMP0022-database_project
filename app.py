@@ -53,13 +53,11 @@ def index():
             r.count AS vote_count,
             COALESCE(d.directors, '') AS directors,
             COALESCE(c.topCast, '') AS topCast,
-            rt.runtimeMinutes,
+            t.runtimeMinutes,
             COALESCE(reg.regions, '') AS regions
-        FROM movie_titles t
+        FROM movies t
         LEFT JOIN average_ratings r
             ON t.movieId = r.movieId
-        LEFT JOIN movie_runtimes rt
-            ON t.movieId = rt.movieId
         LEFT JOIN (
             SELECT movieId, GROUP_CONCAT(genre ORDER BY genre SEPARATOR '|') AS genres
             FROM movie_genres
@@ -111,7 +109,7 @@ def index():
             WHERE mc.movieId = t.movieId AND mc.actor LIKE :actor
         ))
 
-        AND (:runtime = '' OR rt.runtimeMinutes >= :runtime)
+        AND (:runtime = '' OR t.runtimeMinutes >= :runtime)
 
         AND (:region = '' OR EXISTS (
             SELECT 1 FROM movie_regions mr
@@ -455,7 +453,7 @@ def mylist():
             m.title,
             r.avg_rating
         FROM folder_contents fc
-        JOIN movie_titles m ON fc.movie_id = m.movieId
+        JOIN movies m ON fc.movie_id = m.movieId
         JOIN average_ratings r ON m.movieId = r.movieId
         JOIN user_folders uf ON fc.folder_id = uf.id
         WHERE uf.user_id = :u
