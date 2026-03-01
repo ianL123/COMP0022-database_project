@@ -19,10 +19,19 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 @app.context_processor
-def inject_auth_state():
+def inject_globals():
+    path = request.path
+    active_map = {
+        "/": "index",
+        "/task2": "task2",
+        "/task3": "task3",
+        "/predict": "predict",
+        "/task5_heatmap": "task5_heatmap",
+    }
     return {
         "is_logged_in": ('user_id' in session),
-        "current_user": session.get("username")
+        "current_user": session.get("username"),
+        "active_page": active_map.get(path, "")
     }
 
 @app.route('/', methods=['GET', 'POST'])
