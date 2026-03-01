@@ -32,6 +32,22 @@ tr:hover {
   background: #f0f4ff;
 }
 
+.navbar .nav-link.active{
+  font-weight: 700;
+  position: relative;
+}
+
+.navbar .nav-link.active::after{
+  content: "";
+  position: absolute;
+  left: .5rem;
+  right: .5rem;
+  bottom: -0.25rem;
+  height: 2px;
+  background: currentColor;
+  opacity: .9;
+  border-radius: 2px;
+}
 
 .genre{
   display: inline-block;
