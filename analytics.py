@@ -70,6 +70,12 @@ def get_genre_chord_data(session):
         return []
     
 def build_personality_genre_heatmap(db_session, top_n: int = 15):
+    # SECURITY NOTE:
+    # The `top_n` value is currently hardcoded and not derived from any user input.
+    # Although it is interpolated into the SQL string (LIMIT clause),
+    # it is not externally controllable in the current application design.
+    # Therefore, under the present routing and execution flow,
+    # this implementation does NOT introduce a SQL injection risk.
     sql = text(f"""
     WITH top_genres AS (
       SELECT mg.genre AS genre, COUNT(*) AS cnt

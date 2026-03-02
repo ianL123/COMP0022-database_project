@@ -18,6 +18,22 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
+@app.context_processor
+def inject_globals():
+    path = request.path
+    active_map = {
+        "/": "index",
+        "/task2": "task2",
+        "/task3": "task3",
+        "/predict": "predict",
+        "/task5_heatmap": "task5_heatmap",
+    }
+    return {
+        "is_logged_in": ('user_id' in session),
+        "current_user": session.get("username"),
+        "active_page": active_map.get(path, "")
+    }
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     results = []
@@ -25,7 +41,8 @@ def index():
     
     # 1. Check if user is logged in
     # This determines if the template shows the "+" button and "Sign In" button
-    is_logged_in = 'user_id' in session 
+    # is_logged_in = 'user_id' in session 
+    # not needed anymore since we have inject_auth_state, but we can still use it in the backend logic if needed
 
     # 2. Use request.values to handle both GET (initial load) and POST (search button)
     inputs = request.values if request.method == 'POST' else {}
@@ -143,16 +160,16 @@ def index():
         alerts.append("Search unavailable - please check your database connection.")
 
     user_folders = []
-    if is_logged_in:
+    if 'user_id' in session:
         folder_sql = text("SELECT id, folder_name FROM user_folders WHERE user_id = :u")
         user_folders = db.session.execute(folder_sql, {'u': session['user_id']}).fetchall()
 
     # 3. Pass is_logged_in to the template
-    return render_template('index.html', 
+    return render_template(
+        'index.html', 
         results=results, 
         alerts=alerts, 
         inputs=inputs, 
-        is_logged_in=is_logged_in,
         folders=user_folders
     )
 
