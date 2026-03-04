@@ -65,7 +65,7 @@ def index():
             t.movieId,
             t.title,
             COALESCE(g.genres, '') AS genres,
-            SUBSTRING(t.title, -5, 4) AS release_year,
+            CAST(REGEXP_SUBSTR(t.title, '\\(([0-9]{4})\\)\\s*$', 1, 1, NULL, 1) AS UNSIGNED) AS release_year,
             r.avg_rating,
             r.count AS vote_count,
             COALESCE(d.directors, '') AS directors,
@@ -108,8 +108,14 @@ def index():
 
     where_clause = """
         WHERE t.title LIKE :title
-        AND (:year_start = '' OR SUBSTRING(t.title, -5, 4) >= :year_start)
-        AND (:year_end = '' OR SUBSTRING(t.title, -5, 4) <= :year_end)
+                AND (
+          :year_start = '' OR
+          CAST(REGEXP_SUBSTR(t.title, '\\(([0-9]{4})\\)\\s*$', 1, 1, NULL, 1) AS UNSIGNED) >= CAST(:year_start AS UNSIGNED)
+        )
+        AND (
+          :year_end = '' OR
+          CAST(REGEXP_SUBSTR(t.title, '\\(([0-9]{4})\\)\\s*$', 1, 1, NULL, 1) AS UNSIGNED) <= CAST(:year_end AS UNSIGNED)
+        )
 
         AND (:genre = '' OR EXISTS (
             SELECT 1 FROM movie_genres mg
