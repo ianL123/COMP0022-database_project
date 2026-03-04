@@ -66,7 +66,7 @@ def index():
             t.title,
             COALESCE(g.genres, '') AS genres,
             CASE
-                WHEN t.title REGEXP '\\([0-9]{4}\\)\\s*$'
+                WHEN TRIM(t.title) REGEXP '[(][0-9]{4}[)]$'
                 THEN CAST(SUBSTRING(TRIM(t.title), -5, 4) AS UNSIGNED)
                 ELSE NULL
             END AS release_year,
@@ -115,14 +115,14 @@ def index():
         AND (
           :year_start = '' OR
           (
-            t.title REGEXP '\\([0-9]{4}\\)\\s*$'
+            TRIM(t.title) REGEXP '[(][0-9]{4}[)]$'
             AND CAST(SUBSTRING(TRIM(t.title), -5, 4) AS UNSIGNED) >= CAST(:year_start AS UNSIGNED)
           )
         )
         AND (
           :year_end = '' OR
           (
-            t.title REGEXP '\\([0-9]{4}\\)\\s*$'
+            TRIM(t.title) REGEXP '[(][0-9]{4}[)]$'
             AND CAST(SUBSTRING(TRIM(t.title), -5, 4) AS UNSIGNED) <= CAST(:year_end AS UNSIGNED)
           )
         )
