@@ -155,8 +155,11 @@
                         <td>
                             {% if is_logged_in %}
                             <div class="dropdown">
-                                <button class="btn btn-sm btn-success rounded-circle" data-bs-toggle="dropdown">
-                                    <i class="bi bi-plus-lg"></i>
+                                {% set is_saved = (saved_movie_ids is defined) and (row.movieId in saved_movie_ids) %}
+                                <button class="btn btn-sm rounded-circle {{ 'btn-outline-secondary' if is_saved else 'btn-success' }}"
+                                        data-bs-toggle="dropdown"
+                                        title="{{ 'Saved' if is_saved else 'Add to list' }}">
+                                    <i class="bi {{ 'bi-check-lg' if is_saved else 'bi-plus-lg' }}"></i>
                                 </button>
                                 <ul class="dropdown-menu">
                                     <li><h6 class="dropdown-header">Add to List:</h6></li>

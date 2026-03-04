@@ -179,6 +179,20 @@ def index():
     if 'user_id' in session:
         folder_sql = text("SELECT id, folder_name FROM user_folders WHERE user_id = :u")
         user_folders = db.session.execute(folder_sql, {'u': session['user_id']}).fetchall()
+    
+    saved_movie_ids = set()
+
+    if 'user_id' in session:
+        folder_sql = text("SELECT id, folder_name FROM user_folders WHERE user_id = :u")
+        user_folders = db.session.execute(folder_sql, {'u': session['user_id']}).fetchall()
+        saved_sql = text("""
+            SELECT DISTINCT fc.movie_id
+            FROM folder_contents fc
+            JOIN user_folders uf ON uf.id = fc.folder_id
+            WHERE uf.user_id = :u
+        """)
+        rows = db.session.execute(saved_sql, {'u': session['user_id']}).fetchall()
+        saved_movie_ids = {r[0] for r in rows}
 
     # 3. Pass is_logged_in to the template
     return render_template(
@@ -186,7 +200,8 @@ def index():
         results=results, 
         alerts=alerts, 
         inputs=inputs, 
-        folders=user_folders
+        folders=user_folders,
+        saved_movie_ids=saved_movie_ids  # new
     )
 
 # === Task 2: Analytics Reports Route ===
