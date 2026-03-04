@@ -65,7 +65,11 @@ def index():
             t.movieId,
             t.title,
             COALESCE(g.genres, '') AS genres,
-            CAST(REGEXP_SUBSTR(t.title, '\\(([0-9]{4})\\)\\s*$', 1, 1, NULL, 1) AS UNSIGNED) AS release_year,
+            CASE
+                WHEN t.title REGEXP '\\([0-9]{4}\\)\\s*$'
+                THEN CAST(SUBSTRING(TRIM(t.title), -5, 4) AS UNSIGNED)
+                ELSE NULL
+            END AS release_year,
             r.avg_rating,
             r.count AS vote_count,
             COALESCE(d.directors, '') AS directors,
@@ -108,13 +112,19 @@ def index():
 
     where_clause = """
         WHERE t.title LIKE :title
-                AND (
+        AND (
           :year_start = '' OR
-          CAST(REGEXP_SUBSTR(t.title, '\\(([0-9]{4})\\)\\s*$', 1, 1, NULL, 1) AS UNSIGNED) >= CAST(:year_start AS UNSIGNED)
+          (
+            t.title REGEXP '\\([0-9]{4}\\)\\s*$'
+            AND CAST(SUBSTRING(TRIM(t.title), -5, 4) AS UNSIGNED) >= CAST(:year_start AS UNSIGNED)
+          )
         )
         AND (
           :year_end = '' OR
-          CAST(REGEXP_SUBSTR(t.title, '\\(([0-9]{4})\\)\\s*$', 1, 1, NULL, 1) AS UNSIGNED) <= CAST(:year_end AS UNSIGNED)
+          (
+            t.title REGEXP '\\([0-9]{4}\\)\\s*$'
+            AND CAST(SUBSTRING(TRIM(t.title), -5, 4) AS UNSIGNED) <= CAST(:year_end AS UNSIGNED)
+          )
         )
 
         AND (:genre = '' OR EXISTS (
