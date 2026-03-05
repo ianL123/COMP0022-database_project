@@ -4,5 +4,5 @@ WORKDIR /app
 COPY requirements.txt /tmp/requirements.txt
 COPY . .
 # Install the listed libraries
-RUN pip3 install --no-cache-dir -r /tmp/requirements.txt
+RUN pip3 install -r /tmp/requirements.txt
 CMD ["python", "app.py"]
