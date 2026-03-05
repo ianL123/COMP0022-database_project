@@ -37,10 +37,22 @@
                 <div class="card shadow-sm p-4 mb-4">
                     <h5 class="text-primary"><i class="bi bi-info-circle"></i> Insight Guide</h5>
                     <hr>
-                    <p class="small text-muted">
-                        This diagram uses <strong>Jaccard Similarity</strong> to measure how exclusive the relationship is between genres.
-                    </p>
                     
+                    <section class="mb-4">
+                        <h6 class="fw-bold small text-dark">What is Jaccard Similarity?</h6>
+                        <p class="small text-muted">
+                            It measures the overlap between two sets (genres). In this chart, it represents how likely a user who likes <strong>Genre A</strong> is to also like <strong>Genre B</strong>.
+                        </p>
+                        
+                        
+                        <ul class="ps-3 text-muted" style="font-size: 0.8rem;">
+                            <li><strong>1.0:</strong> Perfect overlap (Identical audiences)</li>
+                            <li><strong>0.0:</strong> No overlap (Mutually exclusive)</li>
+                        </ul>
+                    </section>
+            
+                    <hr class="section-divider">
+
                     <div class="mt-3 mb-4">
                         <label class="small fw-bold text-dark">Affinity Strength (Color)</label>
                         <div class="legend-bar"></div>
@@ -56,7 +68,7 @@
                     
                         <div class="mb-2">
                             <div class="d-flex justify-content-between">
-                                <span class="text-muted small">colour25%</span>
+                                <span class="text-muted small">colour 25%</span>
                                 <span class="text-muted small"><span id="t1Val">0.25</span></span>
                             </div>
                             <input id="t1" type="range" min="0" max="0.98" step="0.01" value="0.25" class="form-range">
@@ -64,7 +76,7 @@
                     
                         <div class="mb-2">
                             <div class="d-flex justify-content-between">
-                                <span class="text-muted small">colour50%</span>
+                                <span class="text-muted small">colour 50%</span>
                                 <span class="text-muted small"><span id="t2Val">0.50</span></span>
                             </div>
                             <input id="t2" type="range" min="0" max="0.99" step="0.01" value="0.50" class="form-range">
@@ -72,7 +84,7 @@
                     
                         <div class="mb-2">
                             <div class="d-flex justify-content-between">
-                                <span class="text-muted small">colour75%</span>
+                                <span class="text-muted small">colour 75%</span>
                                 <span class="text-muted small"><span id="t3Val">0.75</span></span>
                             </div>
                             <input id="t3" type="range" min="0" max="0.99" step="0.01" value="0.75" class="form-range">
