@@ -1,7 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from sqlalchemy import text
 from werkzeug.security import generate_password_hash, check_password_hash
-import os
 from extensions import db, PEPPER
 
 # Define the Blueprint
