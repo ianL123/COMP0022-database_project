@@ -199,20 +199,22 @@ def delete_folder():
 
 @user_system.route('/mylist')
 def mylist():
-    if 'user_id' not in session:
-        flash("Please sign in to view your lists.", "warning")
-        return redirect(url_for('user_system.login'))
+    if 'user_id' not in session: return redirect(url_for('user_system.login'))
+    u_id = session['user_id']
 
-    user_id = session['user_id']
-    
-    # 1. Fetch all folders belonging to this user
-    folders_query = text("SELECT id, folder_name FROM user_folders WHERE user_id = :u")
-    folders = db.session.execute(folders_query, {'u': user_id}).fetchall()
+    # 1. Fetch Folders (Owned + Shared)
+    # We use a UNION to get both types in one list
+    folders_sql = text("""
+        SELECT id, folder_name, user_id as owner_id FROM user_folders WHERE user_id = :u
+        UNION
+        SELECT f.id, f.folder_name, f.user_id FROM user_folders f
+        JOIN folder_shares s ON f.id = s.folder_id WHERE s.shared_with_user_id = :u
+    """)
+    folders = db.session.execute(folders_sql, {'u': u_id}).fetchall()
 
-    # 2. Fetch all movies in those folders with metadata
-    # We join folder_contents with movies and average_ratings
+    # 2. Fetch Movies for these folders
     items_query = text("""
-        SELECT 
+        SELECT DISTINCT
             fc.folder_id,
             m.movieId,
             m.title,
@@ -221,13 +223,92 @@ def mylist():
         JOIN movies m ON fc.movie_id = m.movieId
         JOIN average_ratings r ON m.movieId = r.movieId
         JOIN user_folders uf ON fc.folder_id = uf.id
-        WHERE uf.user_id = :u
+        LEFT JOIN folder_shares fs ON uf.id = fs.folder_id
+        WHERE uf.user_id = :u OR fs.shared_with_user_id = :u
     """)
-    items = db.session.execute(items_query, {'u': user_id}).fetchall()
+    items = db.session.execute(items_query, {'u': u_id}).fetchall()
 
-    # Organize items by folder_id for easier looping in the template
+    # 3. Fetch Comments
+    comments_query = text("""
+        SELECT c.folder_id, c.comment_text, u.username, c.created_at
+        FROM folder_comments c
+        JOIN users u ON c.user_id = u.id
+        ORDER BY c.created_at ASC
+    """)
+    all_comments = db.session.execute(comments_query).fetchall()
+
+    # Organize data for Template
     organized_data = {f.id: [] for f in folders}
     for item in items:
-        organized_data[item.folder_id].append(item)
+        if item.folder_id in organized_data:
+            organized_data[item.folder_id].append(item)
 
-    return render_template('mylist.html', folders=folders, organized_data=organized_data)
+    comment_map = {f.id: [] for f in folders}
+    for c in all_comments:
+        if c.folder_id in comment_map:
+            comment_map[c.folder_id].append(c)
+
+    return render_template('mylist.html', 
+                           folders=folders, 
+                           organized_data=organized_data, 
+                           comment_map=comment_map)
+
+@user_system.route('/share_folder', methods=['POST'])
+def share_folder():
+    if 'user_id' not in session: return redirect(url_for('user_system.login'))
+    
+    folder_id = request.form.get('folder_id')
+    target_username = request.form.get('username').strip()
+    
+    # 1. Verify current user owns the folder
+    owner_check = db.session.execute(
+        text("SELECT id FROM user_folders WHERE id = :f AND user_id = :u"),
+        {'f': folder_id, 'u': session['user_id']}
+    ).fetchone()
+    
+    if not owner_check:
+        flash("Unauthorized to share this list.", "danger")
+        return redirect(url_for('user_system.mylist'))
+
+    # 2. Find the user to share with
+    user_to_share = db.session.execute(
+        text("SELECT id FROM users WHERE username = :n"),
+        {'n': target_username}
+    ).fetchone()
+
+    if not user_to_share:
+        flash("User not found.", "warning")
+    else:
+        try:
+            db.session.execute(
+                text("INSERT INTO folder_shares (folder_id, shared_with_user_id) VALUES (:f, :u)"),
+                {'f': folder_id, 'u': user_to_share.id}
+            )
+            db.session.commit()
+            flash(f"List shared with {target_username}!", "success")
+        except Exception:
+            flash("This list is already shared with that user.", "info")
+
+    return redirect(url_for('user_system.mylist'))
+
+@user_system.route('/add_comment', methods=['POST'])
+def add_comment():
+    if 'user_id' not in session: return redirect(url_for('user_system.login'))
+    
+    folder_id = request.form.get('folder_id')
+    content = request.form.get('comment_text', '').strip()
+    
+    # Verify access: Is owner OR is shared with user
+    access_sql = text("""
+        SELECT id FROM user_folders WHERE id = :f AND user_id = :u
+        UNION
+        SELECT folder_id FROM folder_shares WHERE folder_id = :f AND shared_with_user_id = :u
+    """)
+    if db.session.execute(access_sql, {'f': folder_id, 'u': session['user_id']}).fetchone() and content:
+        db.session.execute(
+            text("INSERT INTO folder_comments (folder_id, user_id, comment_text) VALUES (:f, :u, :t)"),
+            {'f': folder_id, 'u': session['user_id'], 't': content}
+        )
+        db.session.commit()
+    
+    return redirect(request.referrer or url_for('user_system.mylist'))

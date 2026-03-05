@@ -97,6 +97,32 @@ tr:hover {
   height: 720px;
 }
 
+/* Sidebar Comment Styling */
+.comment-box {
+  max-height: 300px;
+  overflow-y: auto;
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 10px;
+  border: 1px solid #e9ecef;
+}
+
+.comment-item {
+  font-size: 0.85rem;
+  padding: 8px;
+  margin-bottom: 8px;
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.comment-meta {
+  font-size: 0.75rem;
+  color: #6c757d;
+  display: flex;
+  justify-content: space-between;
+}
+
 /* 未被指定背景色的tag会使用默认灰色 */
 .genre-comedy { background: #ffe08a; }
 .genre-crime  { background: #73a2e9; }
