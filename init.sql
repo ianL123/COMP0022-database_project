@@ -179,10 +179,6 @@ IGNORE INTO TABLE personality_ratings FIELDS TERMINATED BY ',' OPTIONALLY ENCLOS
 SET userId = TRIM(@u), movieId = @m, rating = @r, tstamp = FROM_UNIXTIME(@t);
 INSERT INTO init_run_log(stage) VALUES ('personality_ratings_loaded');
 
-LOAD DATA INFILE '/var/lib/mysql-files/user-system/users.csv'
-IGNORE INTO TABLE users FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
-INSERT INTO init_run_log(stage) VALUES ('users_loaded');
-
 INSERT INTO init_run_log(stage) VALUES ('ALL DATA LOADED');
 
 -- ==========================================
@@ -214,6 +210,27 @@ CREATE TABLE IF NOT EXISTS folder_contents (
     added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (folder_id) REFERENCES user_folders(id) ON DELETE CASCADE,
     UNIQUE KEY unique_movie_in_folder (folder_id, movie_id)
+);
+
+-- Track which users have access to which folders
+CREATE TABLE IF NOT EXISTS folder_shares (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    folder_id INT NOT NULL,
+    shared_with_user_id INT NOT NULL,
+    UNIQUE KEY unique_share (folder_id, shared_with_user_id),
+    FOREIGN KEY (folder_id) REFERENCES user_folders(id) ON DELETE CASCADE,
+    FOREIGN KEY (shared_with_user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Store comments on folders
+CREATE TABLE IF NOT EXISTS folder_comments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    folder_id INT NOT NULL,
+    user_id INT NOT NULL,
+    comment_text TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (folder_id) REFERENCES user_folders(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- ==========================================
