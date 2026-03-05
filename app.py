@@ -65,7 +65,11 @@ def index():
             t.movieId,
             t.title,
             COALESCE(g.genres, '') AS genres,
-            SUBSTRING(t.title, -5, 4) AS release_year,
+            CASE
+                WHEN TRIM(t.title) REGEXP '[(][0-9]{4}[)]$'
+                THEN CAST(SUBSTRING(TRIM(t.title), -5, 4) AS UNSIGNED)
+                ELSE NULL
+            END AS release_year,
             r.avg_rating,
             r.count AS vote_count,
             COALESCE(d.directors, '') AS directors,
@@ -108,8 +112,20 @@ def index():
 
     where_clause = """
         WHERE t.title LIKE :title
-        AND (:year_start = '' OR SUBSTRING(t.title, -5, 4) >= :year_start)
-        AND (:year_end = '' OR SUBSTRING(t.title, -5, 4) <= :year_end)
+        AND (
+          :year_start = '' OR
+          (
+            TRIM(t.title) REGEXP '[(][0-9]{4}[)]$'
+            AND CAST(SUBSTRING(TRIM(t.title), -5, 4) AS UNSIGNED) >= CAST(:year_start AS UNSIGNED)
+          )
+        )
+        AND (
+          :year_end = '' OR
+          (
+            TRIM(t.title) REGEXP '[(][0-9]{4}[)]$'
+            AND CAST(SUBSTRING(TRIM(t.title), -5, 4) AS UNSIGNED) <= CAST(:year_end AS UNSIGNED)
+          )
+        )
 
         AND (:genre = '' OR EXISTS (
             SELECT 1 FROM movie_genres mg
@@ -163,6 +179,20 @@ def index():
     if 'user_id' in session:
         folder_sql = text("SELECT id, folder_name FROM user_folders WHERE user_id = :u")
         user_folders = db.session.execute(folder_sql, {'u': session['user_id']}).fetchall()
+    
+    saved_movie_ids = set()
+
+    if 'user_id' in session:
+        folder_sql = text("SELECT id, folder_name FROM user_folders WHERE user_id = :u")
+        user_folders = db.session.execute(folder_sql, {'u': session['user_id']}).fetchall()
+        saved_sql = text("""
+            SELECT DISTINCT fc.movie_id
+            FROM folder_contents fc
+            JOIN user_folders uf ON uf.id = fc.folder_id
+            WHERE uf.user_id = :u
+        """)
+        rows = db.session.execute(saved_sql, {'u': session['user_id']}).fetchall()
+        saved_movie_ids = {r[0] for r in rows}
 
     # 3. Pass is_logged_in to the template
     return render_template(
@@ -170,7 +200,8 @@ def index():
         results=results, 
         alerts=alerts, 
         inputs=inputs, 
-        folders=user_folders
+        folders=user_folders,
+        saved_movie_ids=saved_movie_ids  # new
     )
 
 # === Task 2: Analytics Reports Route ===
