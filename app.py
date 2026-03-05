@@ -73,32 +73,22 @@ def index():
             r.avg_rating,
             r.count AS vote_count,
             COALESCE(d.directors, '') AS directors,
-            COALESCE(c.topCast, '') AS topCast,
-            t.runtimeMinutes,
-            COALESCE(reg.regions, '') AS regions
+            COALESCE(c.topCast, '') AS topCast,  -- This is what we will display
+            t.runtimeMinutes
         FROM movies t
-        LEFT JOIN average_ratings r
-            ON t.movieId = r.movieId
+        LEFT JOIN average_ratings r ON t.movieId = r.movieId
         LEFT JOIN (
             SELECT movieId, GROUP_CONCAT(genre ORDER BY genre SEPARATOR '|') AS genres
-            FROM movie_genres
-            GROUP BY movieId
+            FROM movie_genres GROUP BY movieId
         ) g ON t.movieId = g.movieId
         LEFT JOIN (
             SELECT movieId, GROUP_CONCAT(director ORDER BY director SEPARATOR ', ') AS directors
-            FROM movie_directors
-            GROUP BY movieId
+            FROM movie_directors GROUP BY movieId
         ) d ON t.movieId = d.movieId
         LEFT JOIN (
             SELECT movieId, GROUP_CONCAT(actor ORDER BY actor SEPARATOR ', ') AS topCast
-            FROM movie_cast
-            GROUP BY movieId
+            FROM movie_cast GROUP BY movieId
         ) c ON t.movieId = c.movieId
-        LEFT JOIN (
-            SELECT movieId, GROUP_CONCAT(region ORDER BY region SEPARATOR ', ') AS regions
-            FROM movie_regions
-            GROUP BY movieId
-        ) reg ON t.movieId = reg.movieId
     """
 
     tag_filter = ""
