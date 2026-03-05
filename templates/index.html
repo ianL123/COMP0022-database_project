@@ -102,10 +102,6 @@
                                 <label class="form-label text-muted small">Region</label>
                                 <input type="text" name="region" class="form-control form-control-sm" placeholder="e.g. US|GB" value="{{ inputs.region }}">
                             </div>
-                            <div class="col-md-2">
-                                <label class="form-label text-muted small">Language (Legacy)</label>
-                                <input type="text" name="language" class="form-control form-control-sm" disabled value="{{ inputs.language }}">
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -120,7 +116,7 @@
                         <th>Year</th>
                         <th>Genre(s)</th>
                         <th>Avg Rating (Votes)</th>
-                        <th>Regions Available</th>
+                        <th>Top Cast</th>
                         <th>Actions</th> </tr>
                 </thead>
                 <tbody>
@@ -144,9 +140,9 @@
                             <small class="text-muted">({{ row.vote_count }})</small>
                         </td>
                         <td>
-                            {% if row.regions %}
-                                <span class="text-muted small" title="{{ row.regions }}" style="cursor: help;">
-                                    {{ row.regions[:25] }}{% if row.regions|length > 25 %}...{% endif %}
+                            {% if row.topCast %}
+                                <span class="text-muted small">
+                                    <i class="bi bi-people-fill"></i> {{ row.topCast }}
                                 </span>
                             {% else %}
                                 <span class="text-muted small">-</span>
