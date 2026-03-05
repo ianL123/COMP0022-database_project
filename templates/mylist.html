@@ -14,7 +14,7 @@
     </nav>
 
     <div class="container">
-        <a class="dropdown-item" href="{{ url_for('mylist') }}">My Designated List</a>
+        <a class="dropdown-item" href="{{ url_for('user_system.mylist') }}">My Designated List</a>
 
         {% if not folders %}
             <div class="alert alert-info">You haven't created any lists yet. Go back to search to start organizing!</div>
