@@ -4,3 +4,4 @@ ml-latest/script.py
 scripts/*
 imdb-dataset/*
 .env
+-personal-use
