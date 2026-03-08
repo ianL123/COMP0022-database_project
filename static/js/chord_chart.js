@@ -278,7 +278,9 @@ function showRibbonTooltip(tooltipEl, event, sourceName, targetName, sharedFans,
 
 
 // ===== Main Draw Function =====
-function drawChordChart(data) {
+function drawChordChart(data, manualSize=540) {
+    // Clear the old chart so they don't stack
+    d3.select("#chord-chart").html("");
 
     const names = Array.from(new Set(data.flatMap(d => [d.source, d.target])));
     const index = new Map(names.map((name, i) => [name, i]));
@@ -301,15 +303,19 @@ function drawChordChart(data) {
         scoreMatrix[index.get(d.target)][index.get(d.source)] = d.score;
     });
 
-    const width = 720;
-    const height = 720;
+    // Use the manualSize for width and height
+    const width = manualSize;
+    const height = manualSize;
+
+    // Keep your radius math proportional to the new size
     const outerRadius = Math.min(width, height) * 0.5 - 120;
     const innerRadius = outerRadius - 25;
 
     const svg = d3.select("#chord-chart")
-        .html("")
-        .append("svg")
-        .attr("viewBox", [-width / 2, -height / 2, width, height]);
+                  .append("svg")
+                  .attr("width", width)
+                  .attr("height", height)
+                  .attr("viewBox", [-width / 2, -height / 2, width, height]);
 
     rebuildWarpScale();
 

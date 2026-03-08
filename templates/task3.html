@@ -76,6 +76,14 @@
                 <div class="card shadow-sm p-4 text-center">
                     <h5 class="text-dark mb-4">Genre Affinity Chord Diagram</h5>
                     
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark">Adjust Chart Size:</label>
+                        <input type="range" id="sizeSlider" min="300" max="1000" value="540" class="form-range">
+                        <div class="d-flex justify-content-between text-muted" style="font-size: 10px;">
+                            <span>Small (300px)</span>
+                            <span>Large (1000px)</span>
+                        </div>
+                    </div>
                     <div id="chord-chart"></div>
                     
                     {% if not chord_data %}
@@ -90,15 +98,24 @@
 
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="{{ url_for('static', filename='js/chord_chart.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const movieData = {{ chord_data | tojson }};
-            if (movieData && movieData.length > 0) {
-                drawChordChart(movieData);
+            const slider = document.getElementById('sizeSlider');
+
+            function draw() {
+                // Default to 540 if slider isn't ready yet
+                const size = slider ? slider.value : 540;
+                if (movieData && movieData.length > 0) {
+                    drawChordChart(movieData, size);
+                }
             }
+
+            draw();
+            if (slider) slider.addEventListener("input", draw);
         });
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
