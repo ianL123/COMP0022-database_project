@@ -53,9 +53,17 @@
                                         {% for movie in organized_data[folder.id] %}
                                         <li class="list-group-item d-flex justify-content-between align-items-center px-0">
                                             <div>
-                                                <span class="fw-bold">{{ movie.title }}</span> 
+                                                {% if movie.movieId %}
+                                                    <a href="{{ url_for('movie_detail', movie_id=movie.movieId) }}" class="fw-bold text-primary text-decoration-underline">
+                                                        {{ movie.title }}
+                                                    </a>
+                                                {% else %}
+                                                    <span class="fw-bold text-muted">{{ movie.title }}</span>
+                                                {% endif %}
+                                                
                                                 <span class="text-warning ms-2"><i class="bi bi-star-fill"></i> {{ "%.1f"|format(movie.avg_rating) }}</span>
                                             </div>
+                                            
                                             <form action="{{ url_for('user_system.delete_from_folder') }}" method="POST">
                                                 <input type="hidden" name="movie_id" value="{{ movie.movieId }}">
                                                 <input type="hidden" name="folder_id" value="{{ folder.id }}">
