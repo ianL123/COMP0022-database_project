@@ -67,8 +67,8 @@
                                 <tr>
                                     <th>Rank</th>
                                     <th>Genre Combination</th>
-                                    <th>Marmite %</th>
                                     <th>Std Dev</th>
+                                    <th>Marmite %</th>
                                     <th>Avg</th>
                                 </tr>
                             </thead>
@@ -81,8 +81,8 @@
                                           <span class="genre genre-{{ g|lower|replace(' ', '-') }}">{{ g }}</span>
                                         {% endfor %}
                                     </td>
-                                    <td class="fw-bold text-danger">{{ "%.1f"|format(row.marmite_score) }}%</td>
-                                    <td class="text-muted small">{{ "%.3f"|format(row.std_dev) }}</td>
+                                    <td class="fw-bold text-danger">{{ "%.3f"|format(row.std_dev) }}</td>
+                                    <td class="text-muted small">{{ "%.1f"|format(row.marmite_score) }}%</td>
                                     <td class="text-muted small">{{ "%.2f"|format(row.avg_score) }}</td>
                                 </tr>
                                 {% else %}
