@@ -112,7 +112,7 @@
                     {% for row in results %}
                     <tr>
                         <td>
-                            <div class="fw-bold text-dark">{{ row.title }}</div>
+                            <div class="fw-bold text-dark"><a href="{{ url_for('movie_detail', movie_id=row.movieId) }}" class="movie-title-link">{{ row.title }}</a></div>
                             <div class="text-muted small">
                                 {% if row.directors %} <i class="bi bi-person-video2"></i> {{ row.directors }} {% endif %}
                                 {% if row.runtimeMinutes %} | <i class="bi bi-clock"></i> {{ row.runtimeMinutes }}m {% endif %}

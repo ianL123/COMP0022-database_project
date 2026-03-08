@@ -198,6 +198,60 @@ def index():
         saved_movie_ids=saved_movie_ids  # new
     )
 
+@app.route('/movie/<int:movie_id>')
+def movie_detail(movie_id):
+    try:
+        sql = text("""
+            SELECT
+                t.movieId,
+                t.title,
+                t.runtimeMinutes,
+                CASE
+                    WHEN TRIM(t.title) REGEXP '[(][0-9]{4}[)]$'
+                    THEN CAST(SUBSTRING(TRIM(t.title), -5, 4) AS UNSIGNED)
+                    ELSE NULL
+                END AS release_year,
+                r.avg_rating,
+                r.count AS vote_count,
+                COALESCE(mp.poster_url, '') AS poster_url,
+                COALESCE(g.genres, '') AS genres,
+                COALESCE(d.directors, '') AS directors,
+                COALESCE(c.topCast, '') AS topCast
+            FROM movies t
+            LEFT JOIN average_ratings r ON t.movieId = r.movieId
+            LEFT JOIN movie_posters mp ON t.movieId = mp.movieId
+            LEFT JOIN (
+                SELECT movieId, GROUP_CONCAT(genre ORDER BY genre SEPARATOR '|') AS genres
+                FROM movie_genres
+                GROUP BY movieId
+            ) g ON t.movieId = g.movieId
+            LEFT JOIN (
+                SELECT movieId, GROUP_CONCAT(director ORDER BY director SEPARATOR ', ') AS directors
+                FROM movie_directors
+                GROUP BY movieId
+            ) d ON t.movieId = d.movieId
+            LEFT JOIN (
+                SELECT movieId, GROUP_CONCAT(actor ORDER BY actor SEPARATOR ', ') AS topCast
+                FROM movie_cast
+                GROUP BY movieId
+            ) c ON t.movieId = c.movieId
+            WHERE t.movieId = :movie_id
+            LIMIT 1
+        """)
+
+        movie = db.session.execute(sql, {"movie_id": movie_id}).mappings().fetchone()
+        print("movie =", movie)
+
+        if not movie:
+            return "Movie not found", 404
+
+        return render_template("movie_detail.html", movie=movie)
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return f"<pre>{e}</pre>", 500
+
 # === Task 2: Analytics Reports Route ===
 @app.route('/task2')
 def task2():
