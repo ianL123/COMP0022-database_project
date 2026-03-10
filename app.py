@@ -282,13 +282,10 @@ def task3():
 @app.route('/predict', methods=['GET', 'POST'])
 def predict():
     """
-    处理电影评分预测请求。
-    GET: 显示空表单。
-    POST: 接收表单数据，调用 predict_algo 计算，返回结果，并回填表单。
+    Handles both GET and POST requests for the prediction page.
     """
     prediction_result = None
 
-    # 关键：准备一个可回填的 dict（GET 也要传给模板）
     form_data = {
         "genre": "",
         "director": "",
@@ -298,7 +295,6 @@ def predict():
     }
 
     if request.method == 'POST':
-        # 关键：把 request.form 转成普通 dict，避免 ImmutableMultiDict 的坑
         form_data = {
             "genre": request.form.get("genre", ""),
             "director": request.form.get("director", ""),

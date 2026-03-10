@@ -53,7 +53,6 @@ def get_prediction(db_session, form_data):
     # C. Genres
     for i, genre in enumerate(genre_list):
         key = f"genre_{i}"
-        # genre 表里每行就是一个 genre，不需要再写 (\\||$) 这种边界
         selects.append(
             f"SELECT movieId, {WEIGHTS['genre']} AS score "
             f"FROM movie_genres "
@@ -61,7 +60,7 @@ def get_prediction(db_session, form_data):
         )
         params[key] = genre
 
-    # D. Tags (DISTINCT 去重保持不变)
+    # D. Tags
     if tag_list:
         tag_conditions = []
         for i, tag in enumerate(tag_list):
@@ -78,7 +77,7 @@ def get_prediction(db_session, form_data):
         """
         selects.append(sql_tags)
 
-    # E. Runtime bucket: 改查 movie_runtimes
+    # E. Runtime bucket
     if p_runtime:
         try:
             rt = int(p_runtime)
@@ -112,9 +111,6 @@ def get_prediction(db_session, form_data):
         return {'error': 'Please enter at least one criteria to generate a prediction.'}
 
     full_sql = " UNION ALL ".join(selects)
-
-    # 最终展示：title 来自 movie_titles
-    # genres / directors 用 GROUP_CONCAT 拼回去
     final_query = f"""
         WITH matching_scores AS (
             {full_sql}
@@ -181,22 +177,15 @@ def get_prediction(db_session, form_data):
 
         predicted_score = numerator / denominator if denominator > 0 else 0.0
 
-        # ==========================================
-        # 新增：计算加权标准差与置信区间 (Expected Range)
-        # ==========================================
+        # new: Expected Range
         variance_sum = 0.0
         for item in similar_list:
-            # 计算方差：权重 * (真实评分 - 预测平均分)^2
             variance_sum += item['similarity'] * ((item['rating'] - predicted_score) ** 2)
-            
         weighted_variance = variance_sum / denominator if denominator > 0 else 0.0
         std_dev = math.sqrt(weighted_variance)
-        
-        # 使用 1 个标准差作为预计波动范围，并限制在 0.5 到 5.0 星之间
         margin = std_dev
         lower_bound = max(0.5, round(predicted_score - margin, 2))
         upper_bound = min(5.0, round(predicted_score + margin, 2))
-        # ==========================================
 
         num_matches = len(results)
         avg_similarity = denominator / num_matches if num_matches > 0 else 0.0
@@ -210,8 +199,8 @@ def get_prediction(db_session, form_data):
 
         return {
             'predicted_score': round(predicted_score, 2),
-            'lower_bound': lower_bound,   # <-- 新增传给前端
-            'upper_bound': upper_bound,   # <-- 新增传给前端
+            'lower_bound': lower_bound,
+            'upper_bound': upper_bound,
             'confidence': confidence_level,
             'similar_movies': similar_list,
             'match_count': len(similar_list)

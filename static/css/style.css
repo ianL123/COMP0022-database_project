@@ -123,7 +123,7 @@ tr:hover {
   justify-content: space-between;
 }
 
-/* 未被指定背景色的tag会使用默认灰色 */
+/* if not assigned, default is gray */
 .genre-comedy { background: #ffe08a; }
 .genre-crime  { background: #73a2e9; }
 .genre-drama  { background: #d1e7dd; }
