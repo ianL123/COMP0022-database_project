@@ -29,12 +29,6 @@ CREATE TABLE IF NOT EXISTS movie_genres (
     PRIMARY KEY (movieId, genre)
 );
 
-CREATE TABLE IF NOT EXISTS links (
-    movieId INT PRIMARY KEY,
-    imdbId VARCHAR(20) NOT NULL,
-    tmdbId VARCHAR(20) 
-);
-
 CREATE TABLE IF NOT EXISTS movie_posters (
     movieId INT PRIMARY KEY,
     poster_url VARCHAR(500) NOT NULL
@@ -88,8 +82,8 @@ CREATE TABLE IF NOT EXISTS movie_regions (
 );
 
 CREATE TABLE IF NOT EXISTS genre_affinity (
-    source VARCHAR(50),
-    target VARCHAR(50),
+    source VARCHAR(100),
+    target VARCHAR(100),
     value INT,
     score DECIMAL(5,4),
     PRIMARY KEY (source, target)
@@ -97,7 +91,7 @@ CREATE TABLE IF NOT EXISTS genre_affinity (
 
 CREATE TABLE IF NOT EXISTS personality_data (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    userId VARCHAR(64) NOT NULL,
+    userId VARCHAR(64) NOT NULL UNIQUE,
     openness DECIMAL(5,2),
     agreeableness DECIMAL(5,2),
     emotional_stability DECIMAL(5,2),
@@ -121,6 +115,45 @@ CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS user_folders (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    folder_name VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_folder_per_user (user_id, folder_name)
+);
+
+CREATE TABLE IF NOT EXISTS folder_contents (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    folder_id INT NOT NULL,
+    movie_id INT NOT NULL,
+    added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (folder_id) REFERENCES user_folders(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_movie_in_folder (folder_id, movie_id)
+);
+
+-- Track which users have access to which folders
+CREATE TABLE IF NOT EXISTS folder_shares (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    folder_id INT NOT NULL,
+    shared_with_user_id INT NOT NULL,
+    UNIQUE KEY unique_share (folder_id, shared_with_user_id),
+    FOREIGN KEY (folder_id) REFERENCES user_folders(id) ON DELETE CASCADE,
+    FOREIGN KEY (shared_with_user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Store comments on folders
+CREATE TABLE IF NOT EXISTS folder_comments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    folder_id INT NOT NULL,
+    user_id INT NOT NULL,
+    comment_text TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (folder_id) REFERENCES user_folders(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS heatmap_cache (
@@ -213,53 +246,12 @@ INSERT INTO init_run_log(stage) VALUES ('ALL DATA LOADED');
 -- 4. Indexing & Relationships
 -- ==========================================
 
--- Removed the ALTER TABLE Primary Keys as they are now defined in CREATE TABLE
-
 CREATE INDEX idx_movie_title ON movies(title);
 CREATE INDEX idx_avg_rating ON average_ratings(avg_rating);
 CREATE INDEX idx_director_name ON movie_directors(director);
 CREATE INDEX idx_actor_name ON movie_cast(actor);
 CREATE INDEX idx_pd_user ON personality_data(userId);
 CREATE INDEX idx_pr_user_movie ON personality_ratings(userId, movieId);
-
-CREATE TABLE IF NOT EXISTS user_folders (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    folder_name VARCHAR(100) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    UNIQUE KEY unique_folder_per_user (user_id, folder_name)
-);
-
-CREATE TABLE IF NOT EXISTS folder_contents (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    folder_id INT NOT NULL,
-    movie_id INT NOT NULL,
-    added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (folder_id) REFERENCES user_folders(id) ON DELETE CASCADE,
-    UNIQUE KEY unique_movie_in_folder (folder_id, movie_id)
-);
-
--- Track which users have access to which folders
-CREATE TABLE IF NOT EXISTS folder_shares (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    folder_id INT NOT NULL,
-    shared_with_user_id INT NOT NULL,
-    UNIQUE KEY unique_share (folder_id, shared_with_user_id),
-    FOREIGN KEY (folder_id) REFERENCES user_folders(id) ON DELETE CASCADE,
-    FOREIGN KEY (shared_with_user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
--- Store comments on folders
-CREATE TABLE IF NOT EXISTS folder_comments (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    folder_id INT NOT NULL,
-    user_id INT NOT NULL,
-    comment_text TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (folder_id) REFERENCES user_folders(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
 
 -- ==========================================
 -- 5. Foreign Keys Definitions
@@ -288,5 +280,18 @@ ALTER TABLE movie_posters
 
 ALTER TABLE movie_descriptions
     ADD CONSTRAINT fk_mdesc_movie FOREIGN KEY (movieId) REFERENCES movies(movieId) ON DELETE CASCADE;
+
+ALTER TABLE movie_genres 
+    ADD CONSTRAINT fk_mg_genre FOREIGN KEY (genre) REFERENCES genre_stats_summary(genre) ON DELETE CASCADE;
+
+ALTER TABLE genre_affinity
+    ADD CONSTRAINT fk_ga_source FOREIGN KEY (source) REFERENCES genre_stats_summary(genre) ON DELETE CASCADE,
+    ADD CONSTRAINT fk_ga_target FOREIGN KEY (target) REFERENCES genre_stats_summary(genre) ON DELETE CASCADE;
+
+ALTER TABLE personality_ratings 
+    ADD CONSTRAINT fk_pr_movie FOREIGN KEY (movieId) REFERENCES movies(movieId) ON DELETE CASCADE;
+
+ALTER TABLE personality_ratings 
+    ADD CONSTRAINT fk_pr_user FOREIGN KEY (userId) REFERENCES personality_data(userId) ON DELETE CASCADE;
 
 INSERT INTO init_run_log(stage) VALUES ('finished');
