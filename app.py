@@ -216,10 +216,12 @@ def movie_detail(movie_id):
                 COALESCE(mp.poster_url, '') AS poster_url,
                 COALESCE(g.genres, '') AS genres,
                 COALESCE(d.directors, '') AS directors,
-                COALESCE(c.topCast, '') AS topCast
+                COALESCE(c.topCast, '') AS topCast,
+                COALESCE(md.description, '') AS description
             FROM movies t
             LEFT JOIN average_ratings r ON t.movieId = r.movieId
             LEFT JOIN movie_posters mp ON t.movieId = mp.movieId
+            LEFT JOIN movie_descriptions md ON t.movieId = md.movieId
             LEFT JOIN (
                 SELECT movieId, GROUP_CONCAT(genre ORDER BY genre SEPARATOR '|') AS genres
                 FROM movie_genres
