@@ -40,6 +40,11 @@ CREATE TABLE IF NOT EXISTS movie_posters (
     poster_url VARCHAR(500) NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS movie_descriptions (
+    movieId INT PRIMARY KEY,
+    description TEXT NOT NULL
+) CHARACTER SET utf8mb4;
+
 CREATE TABLE IF NOT EXISTS tags (
     userId INT NOT NULL,
     movieId INT NOT NULL,
@@ -152,6 +157,15 @@ LINES TERMINATED BY '\n'
 IGNORE 1 ROWS
 (movieId, poster_url);
 INSERT INTO init_run_log(stage) VALUES ('movie_posters_loaded');
+
+LOAD DATA INFILE '/var/lib/mysql-files/ml-latest/movie_descriptions.csv'
+IGNORE INTO TABLE movie_descriptions
+FIELDS TERMINATED BY ','
+ENCLOSED BY '"'
+LINES TERMINATED BY '\n'
+IGNORE 1 ROWS
+(movieId, description);
+INSERT INTO init_run_log(stage) VALUES ('movie_descriptions_loaded');
 
 LOAD DATA INFILE '/var/lib/mysql-files/ml-latest/tags.csv' 
 IGNORE INTO TABLE tags FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
@@ -271,5 +285,8 @@ ALTER TABLE tags
 
 ALTER TABLE movie_posters
     ADD CONSTRAINT fk_mp_movie FOREIGN KEY (movieId) REFERENCES movies(movieId) ON DELETE CASCADE;
+
+ALTER TABLE movie_descriptions
+    ADD CONSTRAINT fk_mdesc_movie FOREIGN KEY (movieId) REFERENCES movies(movieId) ON DELETE CASCADE;
 
 INSERT INTO init_run_log(stage) VALUES ('finished');
