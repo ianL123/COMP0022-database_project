@@ -83,9 +83,13 @@
                             </p>
                         </div>
 
-                        <div class="mb-0">
-                            <h6 class="text-muted">Movie ID</h6>
-                            <p class="mb-0 text-muted">{{ movie.movieId }}</p>
+                        <div class="mb-4">
+                            <h6 class="text-muted">Description</h6>
+                            {% if movie.description %}
+                                <p class="mb-0">{{ movie.description }}</p>
+                            {% else %}
+                                <p class="mb-0 text-muted">No description available.</p>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
