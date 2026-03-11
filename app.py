@@ -40,6 +40,11 @@ def inject_globals():
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    def get_input_list(input_str):
+        if not input_str:
+            return [None]
+        return [p.strip() for p in input_str.split('|') if p.strip()]
+
     results = []
     alerts = []
     
@@ -53,7 +58,6 @@ def index():
 
     # Core inputs
     f_title = inputs.get('title', '').strip()
-    f_genre = inputs.get('genre', '').strip()
     f_tag = inputs.get('tag', '').strip()
     f_year_start = inputs.get('year_start', '').strip()
     f_year_end = inputs.get('year_end', '').strip()
@@ -62,7 +66,14 @@ def index():
     f_director = inputs.get('director', '').strip()
     f_actor = inputs.get('actor', '').strip()
     f_runtime = inputs.get('runtime', '').strip()
-    f_region = inputs.get('region', '').strip()
+
+    # Multiple inputs
+    f_genre_raw = get_input_list(inputs.get('genre', ''))
+    f_region_raw = get_input_list(inputs.get('region', ''))
+
+    # Calculate count based on actual input, not the dummy list
+    genre_count = len([g for g in f_genre_raw if g is not None])
+    region_count = len([r for r in f_region_raw if r is not None])
 
     base_sql = """
         SELECT
@@ -121,9 +132,12 @@ def index():
           )
         )
 
-        AND (:genre = '' OR EXISTS (
-            SELECT 1 FROM movie_genres mg
-            WHERE mg.movieId = t.movieId AND mg.genre LIKE :genre
+        AND (:genre_count = 0 OR t.movieId IN (
+            SELECT mg.movieId 
+            FROM movie_genres mg
+            WHERE mg.genre IN :genre_list
+            GROUP BY mg.movieId
+            HAVING COUNT(DISTINCT mg.genre) = :genre_count
         ))
 
         AND (:director = '' OR EXISTS (
@@ -138,9 +152,12 @@ def index():
 
         AND (:runtime = '' OR t.runtimeMinutes >= :runtime)
 
-        AND (:region = '' OR EXISTS (
-            SELECT 1 FROM movie_regions mr
-            WHERE mr.movieId = t.movieId AND mr.region LIKE :region
+        AND (:region_count = 0 OR t.movieId IN (
+            SELECT mr.movieId 
+            FROM movie_regions mr
+            WHERE mr.region IN :region_list
+            GROUP BY mr.movieId
+            HAVING COUNT(DISTINCT mr.region) = :region_count
         ))
     """
 
@@ -150,14 +167,16 @@ def index():
     
     params = {
         'title': f'%{f_title}%',
-        'genre': f'%{f_genre}%',
+        'genre_list': f_genre_raw,
+        'genre_count': genre_count,
+        'region_list': f_region_raw,
+        'region_count': region_count,
         'tag': f'%{f_tag}%',
         'year_start': f_year_start,
         'year_end': f_year_end,
         'director': f'%{f_director}%',
         'actor': f'%{f_actor}%',
         'runtime': f_runtime,
-        'region': f'%{f_region}%'
     }
 
     try:
@@ -166,7 +185,7 @@ def index():
         if results and any(row.directors is None for row in results):
             alerts.append("Some movies are missing extended metadata from the 'others' database.")
     except Exception as e:
-        print(f"Database Error")
+        print(f"Database Error: {e}")
         alerts.append("Search unavailable - please check your database connection.")
 
     user_folders = []
