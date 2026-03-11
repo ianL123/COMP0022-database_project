@@ -178,10 +178,6 @@ IGNORE INTO TABLE movies FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"' LIN
 SET runtimeMinutes = NULLIF(TRIM(@runtimeMinutes), '');
 INSERT INTO init_run_log(stage) VALUES ('movies_loaded');
 
-LOAD DATA INFILE '/var/lib/mysql-files/ml-latest/links.csv' 
-IGNORE INTO TABLE links FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
-INSERT INTO init_run_log(stage) VALUES ('links_loaded');
-
 LOAD DATA INFILE '/var/lib/mysql-files/ml-latest/movie_posters.csv'
 IGNORE INTO TABLE movie_posters
 FIELDS TERMINATED BY ','
