@@ -14,20 +14,10 @@ services:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./ml-latest:/var/lib/mysql-files/ml-latest
       - ./personality-isf2018:/var/lib/mysql-files/personality-isf2018
-    healthcheck:
-      # mysqladmin ping checks if the engine is responsive
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-ppassword123"]
-      interval: 5s   # Check every 5 seconds
-      timeout: 5s    # Fail if no response in 5s
-      retries: 10    # Give up after 10 failures
-      start_period: 30s # Give MySQL 30s to initialize before first check
 
   app:
     build: .
     container_name: python_app
-    depends_on:
-      db:
-        condition: service_healthy # The "Gatekeeper" logic
     ports:
       - "127.0.0.1:5001:5000"
     environment:
