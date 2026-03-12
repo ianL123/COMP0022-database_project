@@ -2,15 +2,16 @@ from sqlalchemy import text
 import json
 
 def get_genre_popularity(db_session):
-    # Changed 'genres' to 'genre' to match your DESCRIBE output
     sql = """
         SELECT 
             genre, 
+            num_movies,
             avg_score, 
             total_votes,
             sentiment_gap
         FROM genre_stats_summary
-        WHERE total_votes > 10000
+        WHERE total_votes > 15000 
+          AND num_movies >= 20  -- Must have a library of at least 20 movies
         ORDER BY avg_score DESC
         LIMIT 20
     """
@@ -21,16 +22,17 @@ def get_genre_popularity(db_session):
         return []
 
 def get_genre_polarization(db_session):
-    # Changed 'genres' to 'genre'
     sql = """
         SELECT 
             genre, 
             std_dev, 
             marmite_score,
             avg_score, 
-            total_votes
+            total_votes,
+            num_movies
         FROM genre_stats_summary
-        WHERE total_votes > 10000
+        WHERE total_votes > 15000
+          AND num_movies >= 20  -- Ensures polarization is a trend, not a one-off
         ORDER BY std_dev DESC
         LIMIT 20
     """
