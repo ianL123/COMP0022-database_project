@@ -4,7 +4,7 @@ import json
 def get_genre_popularity(db_session):
     sql = """
         SELECT 
-            genre_combinatio, 
+            genre_combination, 
             num_movies,
             avg_score, 
             total_votes,
