@@ -4,7 +4,7 @@ import json
 def get_genre_popularity(db_session):
     sql = """
         SELECT 
-            genre, 
+            genre_combination, 
             num_movies,
             avg_score, 
             total_votes,
@@ -24,7 +24,7 @@ def get_genre_popularity(db_session):
 def get_genre_polarization(db_session):
     sql = """
         SELECT 
-            genre, 
+            genre_combination, 
             std_dev, 
             marmite_score,
             avg_score, 

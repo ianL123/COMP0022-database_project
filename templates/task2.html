@@ -35,7 +35,7 @@
                                 <tr>
                                     <td>#{{ loop.index }}</td>
                                     <td>
-                                        {% for g in row.genre.split('|') %}
+                                        {% for g in row.genre_combination.split('|') %}
                                           <span class="genre genre-{{ g|lower|replace(' ', '-') }}">{{ g }}</span>
                                         {% endfor %}
                                     </td>
@@ -71,7 +71,7 @@
                                 <tr>
                                     <td>#{{ loop.index }}</td>
                                     <td>
-                                        {% for g in row.genre.split('|') %}
+                                        {% for g in row.genre_combination.split('|') %}
                                           <span class="genre genre-{{ g|lower|replace(' ', '-') }}">{{ g }}</span>
                                         {% endfor %}
                                     </td>
