@@ -1,3 +1,5 @@
+SET FOREIGN_KEY_CHECKS = 0;
+
 USE my_project_db;
 
 -- ==========================================
@@ -55,6 +57,7 @@ CREATE TABLE IF NOT EXISTS average_ratings (
 
 CREATE TABLE IF NOT EXISTS genre_stats_summary (
     genre VARCHAR(100) PRIMARY KEY,
+    num_movies INT,
     avg_score DECIMAL(5,4),
     std_dev DECIMAL(5,4),
     total_votes INT,
@@ -291,3 +294,5 @@ ALTER TABLE personality_ratings
     ADD CONSTRAINT fk_pr_user FOREIGN KEY (userId) REFERENCES personality_data(userId) ON DELETE CASCADE;
 
 INSERT INTO init_run_log(stage) VALUES ('finished');
+
+SET FOREIGN_KEY_CHECKS = 1;
