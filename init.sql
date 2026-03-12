@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS average_ratings (
 );
 
 CREATE TABLE IF NOT EXISTS genre_stats_summary (
-    genre VARCHAR(100) PRIMARY KEY,
+    genre_combination VARCHAR(100) PRIMARY KEY,
     num_movies INT,
     avg_score DECIMAL(5,4),
     std_dev DECIMAL(5,4),
@@ -279,13 +279,6 @@ ALTER TABLE movie_posters
 
 ALTER TABLE movie_descriptions
     ADD CONSTRAINT fk_mdesc_movie FOREIGN KEY (movieId) REFERENCES movies(movieId) ON DELETE CASCADE;
-
-ALTER TABLE movie_genres 
-    ADD CONSTRAINT fk_mg_genre FOREIGN KEY (genre) REFERENCES genre_stats_summary(genre) ON DELETE CASCADE;
-
-ALTER TABLE genre_affinity
-    ADD CONSTRAINT fk_ga_source FOREIGN KEY (source) REFERENCES genre_stats_summary(genre) ON DELETE CASCADE,
-    ADD CONSTRAINT fk_ga_target FOREIGN KEY (target) REFERENCES genre_stats_summary(genre) ON DELETE CASCADE;
 
 ALTER TABLE personality_ratings 
     ADD CONSTRAINT fk_pr_movie FOREIGN KEY (movieId) REFERENCES movies(movieId) ON DELETE CASCADE;
