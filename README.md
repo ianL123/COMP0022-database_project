@@ -63,28 +63,22 @@ After your finished waiting on the asynchronous initialization, open your browse
 
 ---
 
-## 3. UI and Styling
-
-The project utilizes two external style sources and one local stylesheet:
-
-```html
-<link href="[https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css](https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css)" rel="stylesheet">
-<link rel="stylesheet" href="[https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css](https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css)">
-<link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
-```
-
-Our custom styles are located in `static/css/style.css`. Due to the CSS cascade, our custom definitions will override Bootstrap's defaults, allowing for personalized modifications.
-
-## 4. Project Layout
+## 3. Project Layout
 
 ```plaintext
 COMP0022-database_project
+├── ml-latest/            # Core Movie Datasets (CSV)
+├── templates/            # HTML Views (Jinja2)
+├── static/               # CSS & JavaScript (Charts/Maps)
+├── analytics.py          # Analytical tasks (2, 3, 5)
 ├── app.py                # Main Flask application (Routes & Core Logic)
 ├── docker-compose.yml    # Docker services configuration
 ├── Dockerfile            # Python environment setup
+├── extensions.py         # Global constants
+├── ER Diagram.png        # ER Diagram
 ├── init.sql              # Database schema & data import
-├── user_system.py        # Auth & Folder management
-├── ml-latest/            # Core Movie Datasets (CSV)
-├── static/               # CSS & JavaScript (Charts/Maps)
-└── templates/            # HTML Views (Jinja2)
+├── nginx.conf            # nginx configurations
+├── predict.py            # Predictive tasks (4)
+├── requirements.txt      # Python library requirements
+└── user_system.py        # User Authentication & Folder management (Task 6)
 ```
