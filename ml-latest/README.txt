@@ -1,5 +1,5 @@
-Summary
-=======
+Data Sources
+===============
 
 This dataset (ml-latest) describes 5-star rating and free-text tagging activity from [MovieLens](http://movielens.org), a movie recommendation service. It contains 33832162 ratings and 2328315 tag applications across 86537 movies. These data were created by 330975 users between January 09, 1995 and July 20, 2023. This dataset was generated on July 20, 2023.
 
@@ -10,6 +10,64 @@ The data are contained in the files `genome-scores.csv`, `genome-tags.csv`, `lin
 This is a *development* dataset. As such, it may change over time and is not an appropriate dataset for shared research results. See available *benchmark* datasets if that is your intent.
 
 This and other GroupLens data sets are publicly available for download at <http://grouplens.org/datasets/>.
+
+Additional metadata was collected from several external sources to enrich the dataset with information such as actors, directors, runtime, region, posters, and movie descriptions.
+
+
+External Metadata Sources
+-------------------------
+
+1. IMDb Official Datasets
+
+Source:
+https://datasets.imdbws.com/
+
+The following metadata fields were extracted and cleaned from the IMDb official datasets:
+
+- movie_cast.csv
+- movie_directors.csv
+- movie_regions.csv
+- runtimeMinutes used in movies.csv
+
+These datasets were processed to extract and normalize relevant information such as:
+
+movieId, actor  
+movieId, director  
+movieId, region  
+runtimeMinutes
+
+The extracted data was cleaned and mapped to the MovieLens movie identifiers.
+
+
+2. OMDb API (Poster Data)
+
+Source:
+https://www.omdbapi.com/
+
+Movie poster URLs were retrieved using IMDb IDs through the OMDb API.  
+After retrieval, the data was cleaned and stored in the following dataset:
+
+movie_posters.csv
+
+Fields:
+
+movieId, poster_url
+
+
+3. IMDb Web Scraping (Movie Descriptions)
+
+Source:
+https://www.imdb.com/
+
+Movie descriptions were collected by retrieving the description section from IMDb movie pages using IMDb IDs.
+
+The extracted text descriptions were cleaned and stored in:
+
+movie_descriptions.csv
+
+Fields:
+
+movieId, description
 
 
 Usage License
@@ -99,14 +157,27 @@ Tags are user-generated metadata about movies. Each tag is typically a single wo
 Timestamps represent seconds since midnight Coordinated Universal Time (UTC) of January 1, 1970.
 
 
-Movies Data File Structure (movies.csv)
----------------------------------------
+Movies Data File Structure
+--------------------------
 
-Movie information is contained in the file `movies.csv`. Each line of this file after the header row represents one movie, and has the following format:
-
-    movieId,title,genres
+movies.csv
 
 Movie titles are entered manually or imported from <https://www.themoviedb.org/>, and include the year of release in parentheses. Errors and inconsistencies may exist in these titles.
+
+Columns:
+movieId, title, runtimeMinutes
+
+Description:
+Basic movie information. The title column contains both the movie title and the release year.
+
+
+movie_genres.csv
+
+Columns:
+movieId, genre
+
+Description:
+Mapping between movies and their genres.
 
 Genres are a pipe-separated list, and are selected from the following:
 
@@ -130,7 +201,128 @@ Genres are a pipe-separated list, and are selected from the following:
 * Western
 * (no genres listed)
 
+movie_cast.csv  
+Columns:
+movieId, actor
+
+Description:
+List of actors appearing in each movie.
+
+
+movie_directors.csv  
+Columns:
+movieId, director
+
+Description:
+Directors associated with each movie.
+
+
+movie_regions.csv  
+Columns:
+movieId, region
+
+Description:
+Production region or country for each movie.
+
+
+movie_posters.csv  
+Columns:
+movieId, poster_url
+
+Description:
+URL of the movie poster image used in the dashboard.
+
+
+movie_descriptions.csv  
+Columns:
+movieId, description
+
+Description:
+Textual description or plot summary of each movie.
+
+
+
+User Interaction Data
+---------------------
+
+tags.csv  
+Columns:
+userId, movieId, tag, timestamp
+
+Description:
+User generated tags describing movie attributes.
+
+
+
+Analytical / Derived Data
+-------------------------
+
+The following datasets are generated through preprocessing and analysis to support reporting and prediction features.
+
+
+average_ratings.csv  
+Columns:
+movieId, avg_rating, count
+
+Description:
+Average rating and number of ratings for each movie.
+
+
+genre_affinity.csv  
+Columns:
+source, target, value, score
+
+Description:
+Relationship scores between genres derived from rating behaviour.
+
+
+genre_stats_summary.csv  
+Columns:
+genres  
+num_movies  
+avg_score  
+std_dev  
+total_votes  
+sentiment_gap  
+marmite_score  
+count_1s  
+count_2s  
+count_3s  
+count_4s  
+count_5s  
+
+Description:
+Statistical summary describing genre popularity, rating distribution, and genre polarisation metrics.
+
+
+
 Cross-Validation
 ----------------
 
 Prior versions of the MovieLens dataset included either pre-computed cross-folds or scripts to perform this computation. We no longer bundle either of these features with the dataset, since most modern toolkits provide this as a built-in feature. If you wish to learn about standard approaches to cross-fold computation in the context of recommender systems evaluation, see [LensKit](http://lenskit.org) for tools, documentation, and open-source code examples.
+
+
+Data Processing Pipeline
+===========================
+
+The data used in this project is generated through a multi stage pipeline that combines MovieLens data with external movie metadata.
+
+Step 1. MovieLens Dataset Import  
+The MovieLens dataset provides the base movie identifiers, user ratings, and tags.
+
+Step 2. External Metadata Collection  
+Additional metadata is collected from external sources:
+
+- IMDb official datasets for runtime, actors, directors, and region
+- OMDb API for poster URLs
+- IMDb webpages for movie descriptions
+
+Step 3. Data Cleaning and Matching  
+Collected data is cleaned and normalized.  
+IMDb identifiers are used to match external metadata to the MovieLens movie IDs.
+
+Step 4. Dataset Construction  
+The cleaned datasets are exported into structured CSV tables used by the database.
+
+Step 5. Analytical Dataset Generation  
+Additional datasets such as genre statistics and rating summaries are computed to support reporting and predictive features within the application.
