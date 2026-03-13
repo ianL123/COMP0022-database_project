@@ -47,7 +47,13 @@ If you also wish to detach the volume (which is the databse), use:
 docker compose down -v
 ```
 
----
+### Database
+
+To log into the database, use:
+
+```bash
+docker exec -it mysql_server mysql -u root -ppassword123 my_project_db
+```
 
 ## 2. Verifying Results
 
