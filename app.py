@@ -42,18 +42,12 @@ def inject_globals():
 def index():
     def get_input_list(input_str):
         if not input_str:
-            return [None]
+            return []
         return [p.strip() for p in input_str.split('|') if p.strip()]
 
     results = []
     alerts = []
-    
-    # 1. Check if user is logged in
-    # This determines if the template shows the "+" button and "Sign In" button
-    # is_logged_in = 'user_id' in session 
-    # not needed anymore since we have inject_auth_state, but we can still use it in the backend logic if needed
 
-    # 2. Use request.values to handle both GET (initial load) and POST (search button)
     inputs = request.values if request.method == 'POST' else {}
 
     # Core inputs
@@ -71,10 +65,6 @@ def index():
     f_genre_raw = get_input_list(inputs.get('genre', ''))
     f_region_raw = get_input_list(inputs.get('region', ''))
 
-    # Calculate count based on actual input, not the dummy list
-    genre_count = len([g for g in f_genre_raw if g is not None])
-    region_count = len([r for r in f_region_raw if r is not None])
-
     base_sql = """
         SELECT
             t.movieId,
@@ -88,7 +78,7 @@ def index():
             r.avg_rating,
             r.count AS vote_count,
             COALESCE(d.directors, '') AS directors,
-            COALESCE(c.topCast, '') AS topCast,  -- This is what we will display
+            COALESCE(c.topCast, '') AS topCast,
             t.runtimeMinutes
         FROM movies t
         LEFT JOIN average_ratings r ON t.movieId = r.movieId
@@ -106,16 +96,7 @@ def index():
         ) c ON t.movieId = c.movieId
     """
 
-    tag_filter = ""
-    if f_tag:
-        tag_filter = """
-            AND EXISTS (
-                SELECT 1 FROM tags tg
-                WHERE tg.movieId = t.movieId AND tg.tag LIKE :tag
-            )
-        """
-
-    where_clause = """
+    where_parts = ["""
         WHERE t.title LIKE :title
         AND (
           :year_start = '' OR
@@ -131,46 +112,19 @@ def index():
             AND CAST(SUBSTRING(TRIM(t.title), -5, 4) AS UNSIGNED) <= CAST(:year_end AS UNSIGNED)
           )
         )
-
-        AND (:genre_count = 0 OR t.movieId IN (
-            SELECT mg.movieId 
-            FROM movie_genres mg
-            WHERE mg.genre IN :genre_list
-            GROUP BY mg.movieId
-            HAVING COUNT(DISTINCT mg.genre) = :genre_count
-        ))
-
         AND (:director = '' OR EXISTS (
             SELECT 1 FROM movie_directors md
             WHERE md.movieId = t.movieId AND md.director LIKE :director
         ))
-
         AND (:actor = '' OR EXISTS (
             SELECT 1 FROM movie_cast mc
             WHERE mc.movieId = t.movieId AND mc.actor LIKE :actor
         ))
-
         AND (:runtime = '' OR t.runtimeMinutes >= :runtime)
+    """]
 
-        AND (:region_count = 0 OR t.movieId IN (
-            SELECT mr.movieId 
-            FROM movie_regions mr
-            WHERE mr.region IN :region_list
-            GROUP BY mr.movieId
-            HAVING COUNT(DISTINCT mr.region) = :region_count
-        ))
-    """
-
-
-    order_by = "ORDER BY r.count DESC"
-    sql = " ".join([base_sql, where_clause, tag_filter, order_by, "LIMIT 50"])
-    
     params = {
         'title': f'%{f_title}%',
-        'genre_list': f_genre_raw,
-        'genre_count': genre_count,
-        'region_list': f_region_raw,
-        'region_count': region_count,
         'tag': f'%{f_tag}%',
         'year_start': f_year_start,
         'year_end': f_year_end,
@@ -179,9 +133,45 @@ def index():
         'runtime': f_runtime,
     }
 
+    # Genre fuzzy search: every entered genre must be matched
+    for i, genre in enumerate(f_genre_raw):
+        key = f'genre_{i}'
+        where_parts.append(f"""
+        AND EXISTS (
+            SELECT 1
+            FROM movie_genres mg
+            WHERE mg.movieId = t.movieId
+              AND mg.genre LIKE :{key}
+        )
+        """)
+        params[key] = f'%{genre}%'
+
+    # Region fuzzy search: every entered region must be matched
+    for i, region in enumerate(f_region_raw):
+        key = f'region_{i}'
+        where_parts.append(f"""
+        AND EXISTS (
+            SELECT 1
+            FROM movie_regions mr
+            WHERE mr.movieId = t.movieId
+              AND mr.region LIKE :{key}
+        )
+        """)
+        params[key] = f'%{region}%'
+
+    if f_tag:
+        where_parts.append("""
+        AND EXISTS (
+            SELECT 1 FROM tags tg
+            WHERE tg.movieId = t.movieId AND tg.tag LIKE :tag
+        )
+        """)
+
+    order_by = "ORDER BY r.count DESC"
+    sql = " ".join([base_sql] + where_parts + [order_by, "LIMIT 50"])
+
     try:
         results = db.session.execute(text(sql), params).fetchall()
-        # Logic check: if search returned results but metadata (directors) is missing
         if results and any(row.directors is None for row in results):
             alerts.append("Some movies are missing extended metadata from the 'others' database.")
     except Exception as e:
@@ -192,7 +182,7 @@ def index():
     if 'user_id' in session:
         folder_sql = text("SELECT id, folder_name FROM user_folders WHERE user_id = :u")
         user_folders = db.session.execute(folder_sql, {'u': session['user_id']}).fetchall()
-    
+
     saved_movie_ids = set()
 
     if 'user_id' in session:
@@ -207,14 +197,13 @@ def index():
         rows = db.session.execute(saved_sql, {'u': session['user_id']}).fetchall()
         saved_movie_ids = {r[0] for r in rows}
 
-    # 3. Pass is_logged_in to the template
     return render_template(
-        'index.html', 
-        results=results, 
-        alerts=alerts, 
-        inputs=inputs, 
+        'index.html',
+        results=results,
+        alerts=alerts,
+        inputs=inputs,
         folders=user_folders,
-        saved_movie_ids=saved_movie_ids  # new
+        saved_movie_ids=saved_movie_ids
     )
 
 @app.route('/movie/<int:movie_id>')
