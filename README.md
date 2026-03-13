@@ -53,7 +53,7 @@ docker compose down -v
 
 After your finished waiting on the asynchronous initialization, open your browser and navigate to: [http://localhost](http://localhost)
 
-**Expected Result**: Access to all interfaces for Tasks 1-4.
+**Expected Result**: Access to all interfaces for Tasks 1-6.
 
 ---
 
