@@ -4,6 +4,20 @@ This project is a movie search and management system. Currently, no manual data 
 
 ## 1. Getting Started
 
+### Pre-launching configuration
+
+To maintain security best practices, sensitive credentials have been moved to an external environment file. Before running the application, please copy the .env.example file to .env.
+
+```bash
+cp .env.example .env
+```
+
+Next, configure secrets: Open .env and provide your preferred strings for the placeholders.
+
+Note: For this assessment, simple alphanumeric strings are sufficient. In production, these are generated via secrets.token_hex(32) to ensure high entropy.
+
+Database URL: The DATABASE_URL is pre-configured to use the internal Docker network name (db) as the host, ensuring the application container can communicate with the database securely.
+
 ### Launching the Containers
 Run the following command in your terminal to build and start the services:
 
@@ -52,7 +66,7 @@ docker compose down -v
 To log into the database, use:
 
 ```bash
-docker exec -it mysql_server mysql -u root -ppassword123 my_project_db
+docker exec -it mysql_server mysql -u root -p${MYSQL_ROOT_PASSWORD} ${MYSQL_DATABASE}
 ```
 
 ## 2. Verifying Results
