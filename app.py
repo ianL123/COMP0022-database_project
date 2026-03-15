@@ -70,13 +70,14 @@ def index():
             t.movieId,
             t.title,
             COALESCE(g.genres, '') AS genres,
-            CASE
-                WHEN TRIM(t.title) REGEXP '[(][0-9]{4}[)]$'
-                THEN CAST(SUBSTRING(TRIM(t.title), -5, 4) AS UNSIGNED)
-                ELSE NULL
+            CASE 
+                WHEN t.title REGEXP '\\(([0-9]{4})\\)$' 
+                -- We extract the 4 digits inside the last parentheses
+                THEN CAST(SUBSTR(TRIM(t.title), -5, 4) AS UNSIGNED)
+                ELSE NULL 
             END AS release_year,
-            r.avg_rating,
-            r.count AS vote_count,
+            COALESCE(r.avg_rating, 0.0) AS avg_rating,
+            COALESCE(r.count, 0) AS vote_count,
             COALESCE(d.directors, '') AS directors,
             COALESCE(c.topCast, '') AS topCast,
             t.runtimeMinutes
