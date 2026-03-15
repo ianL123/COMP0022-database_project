@@ -11,30 +11,38 @@
 
     <div class="container py-4">
         <div class="mb-3">
-            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-sm">
+            <a href="{{ url_for('index') }}" class="btn btn-light border btn-sm">
                 <i class="bi bi-arrow-left"></i> Back to Catalogue
             </a>
         </div>
 
-        <div class="card shadow-sm border-0">
+        <div class="card shadow-sm border-0 rounded-4">
             <div class="card-body p-4">
-                <div class="row g-4">
-                    <div class="col-md-4 col-lg-3">
+                <div class="row g-4 align-items-start flex-nowrap">
+                    <div class="col-4">
                         {% if movie.poster_url %}
-                            <img src="{{ movie.poster_url }}" alt="{{ movie.title }}" class="img-fluid rounded shadow-sm">
+                            <img
+                                src="{{ movie.poster_url }}"
+                                alt="{{ movie.title }}"
+                                class="img-fluid rounded-4 shadow-sm w-100"
+                                style="max-width: 320px;"
+                            >
                         {% else %}
-                            <div class="bg-secondary-subtle text-muted d-flex align-items-center justify-content-center rounded" style="height: 420px;">
+                            <div
+                                class="bg-secondary-subtle text-muted d-flex align-items-center justify-content-center rounded-4 text-center"
+                                style="width: 100%; max-width: 320px; min-height: 480px;"
+                            >
                                 No poster available
                             </div>
                         {% endif %}
                     </div>
 
-                    <div class="col-md-8 col-lg-9">
-                        <h2 class="fw-bold mb-3">{{ movie.title }}</h2>
+                    <div class="col-8">
+                        <h1 class="fw-bold mb-3">{{ movie.title }}</h1>
 
-                        <div class="mb-3">
+                        <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
                             {% if movie.release_year %}
-                                <span class="badge bg-secondary me-2">{{ movie.release_year }}</span>
+                                <span class="badge bg-secondary">{{ movie.release_year }}</span>
                             {% endif %}
                             {% if movie.runtimeMinutes %}
                                 <span class="text-muted">
@@ -43,7 +51,7 @@
                             {% endif %}
                         </div>
 
-                        <div class="mb-3">
+                        <div class="mb-4">
                             {% if movie.genres %}
                                 {% for g in movie.genres.split('|') %}
                                     <span class="genre genre-{{ g|lower|replace(' ', '-') }}">{{ g }}</span>
@@ -51,18 +59,18 @@
                             {% endif %}
                         </div>
 
-                        <div class="mb-3">
-                            <h6 class="text-muted">Average Rating</h6>
+                        <div class="mb-4">
+                            <h6 class="text-muted mb-2">Average Rating</h6>
                             {% if movie.avg_rating %}
-                                <span class="fw-bold text-primary fs-4">{{ "%.1f"|format(movie.avg_rating) }}</span>
+                                <span class="fw-bold text-primary fs-2">{{ "%.1f"|format(movie.avg_rating) }}</span>
                                 <span class="text-muted">({{ movie.vote_count }} votes)</span>
                             {% else %}
                                 <span class="text-muted">N/A</span>
                             {% endif %}
                         </div>
 
-                        <div class="mb-3">
-                            <h6 class="text-muted">Director(s)</h6>
+                        <div class="mb-4">
+                            <h6 class="text-muted mb-2">Director(s)</h6>
                             <p class="mb-0">
                                 {% if movie.directors %}
                                     <i class="bi bi-person-video2"></i> {{ movie.directors }}
@@ -72,8 +80,8 @@
                             </p>
                         </div>
 
-                        <div class="mb-3">
-                            <h6 class="text-muted">Top Cast</h6>
+                        <div class="mb-4">
+                            <h6 class="text-muted mb-2">Top Cast</h6>
                             <p class="mb-0">
                                 {% if movie.topCast %}
                                     <i class="bi bi-people-fill"></i> {{ movie.topCast }}
@@ -83,8 +91,8 @@
                             </p>
                         </div>
 
-                        <div class="mb-4">
-                            <h6 class="text-muted">Description</h6>
+                        <div class="mb-0">
+                            <h6 class="text-muted mb-2">Description</h6>
                             {% if movie.description %}
                                 <p class="mb-0">{{ movie.description }}</p>
                             {% else %}
