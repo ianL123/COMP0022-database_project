@@ -137,3 +137,14 @@ tr:hover {
 .genre-mystery { background: #a0d995; }
 .genre-imax { background: #cfd2d8; }
 .genre-adventure { background: #ffcc80; }
+
+/* Movie title link styling */
+.movie-title-link {
+  color: #000;
+  text-decoration: underline;
+}
+
+.movie-title-link:hover {
+  color: #000;
+  text-decoration: underline;
+}
