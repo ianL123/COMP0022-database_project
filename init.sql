@@ -1,7 +1,5 @@
 SET FOREIGN_KEY_CHECKS = 0;
 
-USE my_project_db;
-
 -- ==========================================
 -- 1. Setup Logging & Clean Slate
 -- ==========================================
