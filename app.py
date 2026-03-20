@@ -70,12 +70,7 @@ def index():
             t.movieId,
             t.title,
             COALESCE(g.genres, '') AS genres,
-            CASE 
-                WHEN t.title REGEXP '\\(([0-9]{4})\\)$' 
-                -- We extract the 4 digits inside the last parentheses
-                THEN CAST(SUBSTR(TRIM(t.title), -5, 4) AS UNSIGNED)
-                ELSE NULL 
-            END AS release_year,
+            CAST(REGEXP_REPLACE(t.title, '^.*\\\\(([0-9]{4})\\\\).*$', '$1') AS UNSIGNED) AS release_year,
             COALESCE(r.avg_rating, 0.0) AS avg_rating,
             COALESCE(r.count, 0) AS vote_count,
             COALESCE(d.directors, '') AS directors,
@@ -271,9 +266,9 @@ def task2():
     """
     popularity_data = analytics.get_genre_popularity(db.session)
     polarization_data = analytics.get_genre_polarization(db.session)
-    
-    return render_template('task2.html', 
-                           popularity=popularity_data, 
+
+    return render_template('task2.html',
+                           popularity=popularity_data,
                            polarization=polarization_data)
 
 # === Task 3: Audience Affinity (Chord Diagram) ===
@@ -284,7 +279,7 @@ def task3():
     """
     # This calls the algorithm that creates the source/target matrix
     chord_data = analytics.get_genre_chord_data(db.session)
-    
+
     return render_template('task3.html', chord_data=chord_data)
 
 # === Task 4: Prediction Route ===
